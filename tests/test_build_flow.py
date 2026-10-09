@@ -32,7 +32,7 @@ class BuildFlowTests(unittest.TestCase):
 
     def setUp(self):
         QSettings('Khurkham','ExeBuilderStudio').clear()
-        self.temp=tempfile.TemporaryDirectory(); self.root=Path(self.temp.name)
+        self.temp=tempfile.TemporaryDirectory(); self.root=Path(self.temp.name).resolve()
         self.window=main.Window(); self.calls=[]
         self.window.start=lambda exe,args,cwd=None,callback=None,payload=None,label=None:self.calls.append({
             'exe':exe,'args':args,'cwd':cwd,'callback':callback,'payload':payload,'label':label})
