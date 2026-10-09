@@ -5,7 +5,7 @@ from urllib.parse import urljoin, urlparse
 from urllib.request import Request, build_opener, HTTPSHandler, HTTPRedirectHandler
 from html.parser import HTMLParser
 APP_VERSION = '1.0.0'
-BUILD_REVISION = '2026.10.09.3'
+BUILD_REVISION = '2026.10.10.4'
 # Publisher configures this before building. End users do not set an update source.
 UPDATE_REPOSITORY = 'khurkham/ExeBuilderStudio'
 NAMES = {'java':'Java (Temurin JDK)', 'launch4j':'Launch4j', 'inno':'Inno Setup', 'python':'Python', 'pyinstaller':'PyInstaller', 'sdk':'Windows SDK / SignTool', 'studio':'ExeBuilderStudio'}
@@ -74,7 +74,8 @@ def github_release(repo):
     digest=asset.get('digest') or ''
     checksum=digest[7:] if digest.startswith('sha256:') else ''
     if not checksum:raise ValueError('GitHub release asset has no SHA-256 digest. Re-upload the Setup asset.')
-    return dict(version=release['tag_name'].lstrip('vV'),url=asset['browser_download_url'],name=asset['name'],sha256=checksum,kind='exe',publisher='')
+    revision=re.search(r'Build revision:\s*([0-9.]+)',release.get('body') or '')
+    return dict(build_revision=revision[1].rstrip('.') if revision else '',version=release['tag_name'].lstrip('vV'),url=asset['browser_download_url'],name=asset['name'],sha256=checksum,kind='exe',publisher='')
 
 def resolve_release(key,repo='',java_major='25'):
     if key=='studio':return github_release(repo)
@@ -221,7 +222,7 @@ def detect_tool(key,configured=''):
     from backend import java_candidates
     from signing import detect_signtool
     configured=normalize_tool_path(configured)
-    if key=='studio':return {'path':sys.executable,'version':APP_VERSION,'found':True}
+    if key=='studio':return {'path':sys.executable,'version':APP_VERSION,'build_revision':BUILD_REVISION,'found':True}
     if key=='pyinstaller':
         if not configured or not Path(configured).is_file():
             return {'found':False,'path':configured,'version':'','error':'Select an installed Python interpreter first.'}
@@ -265,9 +266,18 @@ def detect_tool(key,configured=''):
         if path and Path(path).is_file() and 'windowsapps' not in str(path).lower():return probe(path)
     return {'found':False,'path':'','version':''}
 
+def windows_powershell():
+    system=os.environ.get('SystemRoot',os.environ.get('WINDIR','C:/Windows'))
+    candidate=Path(system)/'System32/WindowsPowerShell/v1.0/powershell.exe'
+    if candidate.is_file():return str(candidate)
+    fallback=shutil.which('powershell.exe')
+    if fallback:return fallback
+    raise FileNotFoundError('Windows PowerShell was not found: '+str(candidate))
+
 def verify_publisher(path,publisher):
     if os.name!='nt':raise ValueError('Install tools on Windows.')
+    if not Path(path).is_file():raise FileNotFoundError('Downloaded installer was not found: '+str(path))
     env=os.environ.copy();env['EBS_INSTALLER_PATH']=str(path);env['EBS_EXPECTED_PUBLISHER']=publisher
     script='$s=Get-AuthenticodeSignature -LiteralPath $env:EBS_INSTALLER_PATH; if ($s.Status -ne "Valid" -or $s.SignerCertificate.Subject -notlike ("*"+$env:EBS_EXPECTED_PUBLISHER+"*")) {throw "Installer signature or publisher verification failed"}'
-    p=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-Command',script],env=env,capture_output=True,text=True,timeout=30,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+    p=subprocess.run([windows_powershell(),'-NoProfile','-NonInteractive','-Command',script],env=env,capture_output=True,text=True,errors='replace',timeout=30,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
     if p.returncode:raise ValueError(p.stderr.strip() or 'Installer verification failed.')

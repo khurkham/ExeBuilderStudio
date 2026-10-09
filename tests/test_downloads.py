@@ -108,6 +108,14 @@ class DownloadTests(unittest.TestCase):
         with patch.object(td,'run_capture',side_effect=OSError('Cannot execute')):
             result=td.detect_tool('java',str(p))
         self.assertTrue(result['found']);self.assertIn('Cannot execute',result['error'])
+    def test_powershell_discovery_does_not_require_path(self):
+        exe=self.root/'System32/WindowsPowerShell/v1.0/powershell.exe'
+        exe.parent.mkdir(parents=True);exe.write_bytes(b'MZ')
+        with patch.dict(os.environ,{'SystemRoot':str(self.root)}),patch.object(td.shutil,'which',return_value=None) as lookup:
+            self.assertEqual(td.windows_powershell(),str(exe));lookup.assert_not_called()
+    def test_missing_powershell_names_the_missing_file(self):
+        with patch.dict(os.environ,{'SystemRoot':str(self.root)}),patch.object(td.shutil,'which',return_value=None):
+            with self.assertRaisesRegex(FileNotFoundError,'Windows PowerShell was not found'):td.windows_powershell()
     def test_https_only(self):
         for value in ['http://example.com/file.exe','file:///etc/passwd','https://user:secret@example.com/file']:
             with self.assertRaises(ValueError):td.validate_url(value)

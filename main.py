@@ -72,7 +72,7 @@ class Window(QMainWindow):
     head=QHBoxLayout(); self.logo=QLabel(); self.logo.setPixmap(QPixmap(str(resource("logo.png"))).scaled(64,64,Qt.KeepAspectRatio,Qt.SmoothTransformation)); self.logo.setFixedSize(72,72); head.addWidget(self.logo); self.setWindowIcon(QIcon(str(resource("app.ico")))); self.title=QLabel(); head.addWidget(self.title); head.addStretch(); self.lang=QComboBox(); self.lang.addItems(['English','ไทย','တႆး']); self.lang.setCurrentIndex(int(self.settings.value('language',1))); head.addWidget(self.lang); layout.addLayout(head)
     self.tabs=QTabWidget(); layout.addWidget(self.tabs); self.pages={}
     for key in ['java','python','installer','icon','tools','signing']:
-      page=QWidget(); form=QFormLayout(page); form.setSizeConstraint(QLayout.SetMinimumSize); self.pages[key]=form
+      page=QWidget(); form=QFormLayout(page); form.setSizeConstraint(QLayout.SetMinimumSize); form.setVerticalSpacing(12); self.pages[key]=form
       scroll=QScrollArea(); scroll.setWidgetResizable(True); scroll.setWidget(page); self.tabs.addTab(scroll,key)
     for page in ['java','python']:
       self.field(page,'source',kind='file'); self.field(page,'output',kind='dir'); self.field(page,'name',default='MyApplication'); self.field(page,'icon',kind='ico'); self.check(page,'console')

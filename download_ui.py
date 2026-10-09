@@ -84,7 +84,8 @@ class ToolWorker(QThread):
                 value=local['version']
                 if self.key=='java':
                     match=__import__('re').search(r'version "([^"]+)"',value);value=match[1] if match else ''
-                if value and version_key(release['version']) and version_key(value)>=version_key(release['version']):self.result.emit({'current':True,'detected':local,'latest':release['version']});return
+                new_build=self.key=='studio' and version_key(value)==version_key(release['version']) and version_key(release.get('build_revision',''))>version_key(local.get('build_revision',''))
+                if not new_build and value and version_key(release['version']) and version_key(value)>=version_key(release['version']):self.result.emit({'current':True,'detected':local,'latest':release['version']});return
             self.phase.emit('downloading');path=download(release,app_data()/'downloads'/self.key,self.progress.emit,self.isInterruptionRequested)
             if release.get('publisher'):verify_publisher(path,release['publisher'])
             if self.isInterruptionRequested():raise Cancelled()
@@ -119,6 +120,15 @@ class ToolCard(QWidget):
                 if Path(artifact['path']).exists():self.artifact=artifact;self.state='ready';self.detail=artifact['path']
             except (ValueError,KeyError,TypeError):pass
         self.translate()
+    def fit_content(self):
+        layout=self.layout()
+        layout.invalidate()
+        required=layout.totalHeightForWidth(max(1,self.width()))
+        self.setMinimumHeight(max(layout.minimumSize().height(),required))
+        self.updateGeometry()
+    def resizeEvent(self,event):
+        super().resizeEvent(event)
+        self.fit_content()
     def word(self,key):return WORDS[key][self.host.lang.currentIndex()]
     def translate(self):
         for action,button in self.buttons.items():button.setText(self.word(action)+((' '+NAMES[self.key]) if action in ('download','update') else ''))
@@ -126,6 +136,7 @@ class ToolCard(QWidget):
         self.buttons['install'].setEnabled(self.artifact is not None and self.worker is None)
         notes=['note']+(['sdk_note'] if self.key=='sdk' else ['pip_note'] if self.key=='pyinstaller' else ['java_note'] if self.key=='java' else [])
         self.note.setText('\n'.join(self.word(n) for n in notes));self.status.setText((self.word(self.state) if self.state in WORDS else self.state)+ ('\n'+self.detail if self.detail else ''))
+        self.fit_content()
     def configured(self):
         field={'launch4j':'tools/launch4jc','inno':'tools/ISCC','python':'tools/Python interpreter','pyinstaller':'tools/Python interpreter','sdk':'signing/signtool'}.get(self.key)
         return self.host.fields[field].text().strip() if field else str(self.host.settings.value('downloads/java/path','')) if self.key=='java' else ''
