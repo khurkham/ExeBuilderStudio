@@ -64,7 +64,7 @@ class SigningTests(unittest.TestCase):
             exe = self.root / 'Windows Kits/10/bin' / version / arch / 'signtool.exe'
             exe.parent.mkdir(parents=True); exe.write_bytes(b'MZ')
         with patch.dict(os.environ, {'ProgramFiles(x86)':str(self.root),'ProgramFiles':str(self.root)}), \
-             patch('signing.shutil.which',return_value=None), patch('signing.platform.machine',return_value='AMD64'):
+             patch('signing.shutil.which',return_value=None), patch('signing.platform.machine',return_value='AMD64'), patch.dict(sys.modules, {'winreg':None}):
             self.assertEqual(Path(signing.detect_signtool()).parent.parent.name, '10.0.10000.0')
             self.assertEqual(Path(signing.detect_signtool()).parent.name, 'x64')
 
