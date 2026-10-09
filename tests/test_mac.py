@@ -5,7 +5,7 @@ import mac_backend as mac
 
 class MacPlans(unittest.TestCase):
     def setUp(self):
-        self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name)
+        self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name).resolve()
         self.tool=self.root/'python3';self.tool.write_text('tool');self.tool.chmod(0o755)
         self.source=self.root/'main.py';self.source.write_text('print(1)')
     def tearDown(self):self.tmp.cleanup()
