@@ -44,10 +44,14 @@ class DownloadUITests(unittest.TestCase):
         self.assertFalse(hasattr(self.window,'update_save'))
         self.window.settings.setValue('updates/repository','Untrusted/UserSetting')
         with patch.object(ui,'UPDATE_REPOSITORY',''):
-            studio=self.window.tool_cards[-1];studio.begin('update')
+            studio=self.window.tool_cards[-1]
+        with patch.object(ui,'UPDATE_REPOSITORY',''):
+            studio.begin('update')
         self.assertEqual(studio.state,'notconfigured');self.assertIn('ผู้พัฒนา',studio.status.text())
     def test_missing_self_update_source_stays_in_app(self):
-        studio=self.window.tool_cards[-1];studio.begin('update')
+        studio=self.window.tool_cards[-1]
+        with patch.object(ui,'UPDATE_REPOSITORY',''):
+            studio.begin('update')
         self.assertEqual(studio.state,'notconfigured');self.assertFalse(self.window.busy)
     def test_pip_directory_can_be_installed(self):
         with tempfile.TemporaryDirectory() as directory:
