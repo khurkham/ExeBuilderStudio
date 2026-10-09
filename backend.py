@@ -25,7 +25,7 @@ def convert_icon(source, target):
 def java_candidates():
     result=[]
     if shutil.which('java'): result.append(shutil.which('java'))
-    if os.environ.get('JAVA_HOME'): result.append(str(Path(os.environ['JAVA_HOME'])/'bin/java.exe'))
+    if os.environ.get('JAVA_HOME'): result.append(str(Path(os.environ['JAVA_HOME'])/('bin/java.exe' if os.name=='nt' else 'bin/java')))
     for root in [os.environ.get('ProgramFiles','C:/Program Files'),os.environ.get('ProgramFiles(x86)','C:/Program Files (x86)')]:
         for vendor in ['Java','Eclipse Adoptium','Microsoft','Amazon Corretto']:
             result.extend(str(p) for p in (Path(root)/vendor).glob('*/bin/java.exe'))

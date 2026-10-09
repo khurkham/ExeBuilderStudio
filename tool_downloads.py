@@ -12,6 +12,7 @@ NAMES = {'java':'Java (Temurin JDK)', 'launch4j':'Launch4j', 'inno':'Inno Setup'
 class Cancelled(Exception): pass
 
 def app_data():
+    if sys.platform=='darwin':return Path.home()/'Library/Application Support/ExeBuilderStudio'
     return Path(os.environ.get('LOCALAPPDATA',Path.home()/'.local/share'))/'ExeBuilderStudio'
 
 def version_key(value):

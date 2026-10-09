@@ -71,7 +71,7 @@ class Window(QMainWindow):
     self.resize(1080,820); root=QWidget(); self.setCentralWidget(root); layout=QVBoxLayout(root)
     head=QHBoxLayout(); self.logo=QLabel(); self.logo.setPixmap(QPixmap(str(resource("logo.png"))).scaled(64,64,Qt.KeepAspectRatio,Qt.SmoothTransformation)); self.logo.setFixedSize(72,72); head.addWidget(self.logo); self.setWindowIcon(QIcon(str(resource("app.ico")))); self.title=QLabel(); head.addWidget(self.title); head.addStretch(); self.lang=QComboBox(); self.lang.addItems(['English','ไทย','တႆး']); self.lang.setCurrentIndex(int(self.settings.value('language',1))); head.addWidget(self.lang); layout.addLayout(head)
     self.tabs=QTabWidget(); layout.addWidget(self.tabs); self.pages={}
-    for key in ['java','python','installer','icon','tools','signing']:
+    for key in ['java','python','installer','icon','tools','signing','mac']:
       page=QWidget(); form=QFormLayout(page); form.setSizeConstraint(QLayout.SetMinimumSize); form.setVerticalSpacing(12); self.pages[key]=form
       scroll=QScrollArea(); scroll.setWidgetResizable(True); scroll.setWidget(page); self.tabs.addTab(scroll,key)
     for page in ['java','python']:
@@ -102,6 +102,8 @@ class Window(QMainWindow):
     self.field('signing','target',kind='signfile'); self.button('signing','signfile',self.sign_selected); self.button('signing','verifyfile',self.verify_selected)
     add_tool_card(self,'sdk',self.pages['signing'])
     self.button('signing','certfolder',lambda:QDesktopServices.openUrl(QUrl.fromLocalFile(str(certificate_dir()))))
+    from mac_ui import add_mac_page
+    add_mac_page(self,T)
     about=QWidget(); box=QVBoxLayout(about); logo=QLabel(); logo.setPixmap(QPixmap(str(resource('logo.png'))).scaled(140,140,Qt.KeepAspectRatio,Qt.SmoothTransformation)); box.addWidget(logo); self.about_text=QLabel(); self.about_text.setWordWrap(True); box.addWidget(self.about_text); add_about_updater(self,box); box.addStretch(); about_scroll=QScrollArea(); about_scroll.setWidgetResizable(True); about_scroll.setWidget(about); self.about_index=self.tabs.addTab(about_scroll,'About')
     self.status=QLabel(); layout.addWidget(self.status); self.log=QPlainTextEdit(); self.log.setReadOnly(True); self.log.setMaximumBlockCount(10000); self.log.setMaximumHeight(200); layout.addWidget(self.log)
     row=QHBoxLayout(); self.stop=QPushButton(); self.labels.append((self.stop,'stop')); self.stop.clicked.connect(self.cancel); row.addWidget(self.stop); self.open=QPushButton(); self.labels.append((self.open,'open')); self.open.clicked.connect(self.open_output); row.addWidget(self.open); layout.addLayout(row)
@@ -109,6 +111,13 @@ class Window(QMainWindow):
     self.on_success=None; self.process_output=''; self.input_payload=None
     self.process.started.connect(self.write_input)
     self.lang.currentIndexChanged.connect(self.translate); self.translate()
+    self.tabs.setUsesScrollButtons(True)
+    if sys.platform=='darwin':
+      for index in range(6):self.tabs.setTabEnabled(index,False)
+      self.tabs.setCurrentIndex(6)
+      # Windows online-update assets must never be offered on macOS.
+      for card in self.tool_cards:card.setEnabled(False)
+      self.status.setText('Ready • Build APP / DMG on macOS')
     java_path=str(self.settings.value('downloads/java/path',''))
     if java_path and Path(java_path).is_file():
       os.environ['JAVA_HOME']=str(Path(java_path).parent.parent); os.environ['PATH']=str(Path(java_path).parent)+os.pathsep+os.environ.get('PATH','')
@@ -129,7 +138,7 @@ class Window(QMainWindow):
     self.tabs.setTabText(self.about_index,['About','เกี่ยวกับ','လွင်ႈပရူဝ်ႇၵရမ်ႇ'][i])
     self.about_text.setText(['EXE Builder Studio • Version 1.0\nDeveloped by Khurkham Langkhur\nJava / Python EXE, Inno Setup, ICO\nEmbedded fonts: ', 'EXE Builder Studio • เวอร์ชัน 1.0\nพัฒนาโดย Khurkham Langkhur\nสร้าง EXE จาก Java / Python สร้างตัวติดตั้ง และแปลง ICO\nฟอนต์ที่ฝัง: ', 'EXE Builder Studio • ဝႃးသျိၼ်း 1.0\nၽူႈသၢင်ႈ Khurkham Langkhur\nJava / Python EXE, Inno Setup, ICO\nၾွၼ်ႉ: '][i].replace('1.0',APP_VERSION)+' / '.join(FAMILIES.values()))
     translate_downloads(self)
-    if not self.busy:self.status.setText(T['ready'][i])
+    if not self.busy:self.status.setText('Ready • Build APP / DMG on macOS' if sys.platform=='darwin' else T['ready'][i])
  def field(self,page,key,kind=None,default=''):
     label=QLabel(); self.labels.append((label,key)); edit=QLineEdit(str(self.settings.value(page+'/'+key,default))); self.fields[page+'/'+key]=edit
     row=QWidget(); box=QHBoxLayout(row); box.setContentsMargins(0,0,0,0); box.addWidget(edit)
@@ -139,8 +148,8 @@ class Window(QMainWindow):
  def browse(self,edit,kind,page,key):
     if kind=='dir': value=QFileDialog.getExistingDirectory(self,'Folder',edit.text())
     else:
-      filters={'ico':'Icon (*.ico)','image':'Images (*.png *.jpg *.jpeg *.bmp *.webp *.ico)', 'pfx':'Certificate (*.pfx *.p12)', 'signfile':'Signable files (*.exe *.dll *.msi)'}
-      filt=filters.get(kind,'JAR (*.jar)' if page=='java' and key=='source' else 'Python (*.py)' if page=='python' and key=='source' else 'Executable (*.exe);;All files (*)')
+      filters={'icns':'Mac icon (*.icns)', 'ico':'Icon (*.ico)','image':'Images (*.png *.jpg *.jpeg *.bmp *.webp *.ico)', 'pfx':'Certificate (*.pfx *.p12)', 'signfile':'Signable files (*.exe *.dll *.msi)'}
+      filt=filters.get(kind,'JAR (*.jar)' if page=='java' and key=='source' else 'Python (*.py)' if page=='python' and key=='source' else 'Python (*.py)' if page=='mac' and key=='source' else 'All files (*)' if page=='mac' else 'Executable (*.exe);;All files (*)')
       value=QFileDialog.getOpenFileName(self,'File',edit.text(),filt)[0]
     if value:edit.setText(value)
  def check(self,page,key,on=False):
@@ -166,8 +175,9 @@ class Window(QMainWindow):
     p=Path(value).resolve(); p.mkdir(parents=True,exist_ok=True); self.last_output=str(p); return p
  def available(self,path):return str(require_file(path,'.exe'))
  def start(self,exe,args,cwd=None,callback=None,payload=None,label=None):
-    if os.name!='nt':raise ValueError('Build EXE on Windows.')
+    if os.name!='nt' and sys.platform!='darwin':raise ValueError('Build on Windows or macOS.')
     self.save_settings(); self.busy=True; self.tabs.setEnabled(False); self.status.setText(label or 'Running…')
+    if hasattr(self,'build_progress'):self.build_progress.setRange(0,0)
     self.on_success=callback; self.process_output=''; self.input_payload=payload
     self.stop.setEnabled(not (payload and payload.get('action')=='install-sdk'))
     self.log.appendPlainText(exe+' '+repr(args)); self.process.setWorkingDirectory(str(cwd or Path.cwd())); self.process.start(exe,args)
@@ -183,7 +193,10 @@ class Window(QMainWindow):
     self.log.appendPlainText(self.process.errorString())
     if self.process.state()==QProcess.NotRunning:
       self.on_success=None; self.input_payload=None; self.unlock('Failed')
- def unlock(self,text):self.busy=False; self.tabs.setEnabled(True); self.stop.setEnabled(True); self.status.setText(text)
+ def unlock(self,text):
+    self.busy=False; self.tabs.setEnabled(True); self.stop.setEnabled(True); self.status.setText(text)
+    if hasattr(self,'build_progress'):
+      self.build_progress.setRange(0,1);self.build_progress.setValue(1 if text=='Success' else 0)
  def finished(self,code,status):
     self.read_output(); callback=self.on_success; self.on_success=None; self.input_payload=None
     ok=code==0 and status==QProcess.NormalExit
@@ -328,6 +341,9 @@ class Window(QMainWindow):
     else:self.save_settings(); event.accept()
 
 def main():
+ if len(sys.argv)==5 and sys.argv[1]=='--ebs-dmg':
+  from mac_backend import build_dmg
+  print(build_dmg(*sys.argv[2:]));return
  if os.name=='nt':
   import ctypes
   ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('Khurkham.ExeBuilderStudio')
@@ -336,5 +352,13 @@ def main():
  if FONT_ERRORS:QMessageBox.warning(None,'Embedded fonts','\n'.join(FONT_ERRORS))
  app.setStyleSheet('QWidget {background:#101c30; color:#e7edf7;} QLineEdit,QPlainTextEdit,QComboBox {background:#192b45; border:1px solid #355074; border-radius:5px; padding:6px;} QPushButton {background:#235e8e; border-radius:5px; padding:9px;} QPushButton:hover {background:#317bb4;} QPushButton:disabled {color:#8292a8;} QTabBar::tab {padding:12px; margin-right:5px; border:1px solid #355074; border-top-left-radius:12px; border-top-right-radius:12px; background:#192b45;} QTabBar::tab:selected {background:#235e8e; border-bottom:3px solid #7dcfff;} QProgressBar {border:1px solid #355074; border-radius:5px; text-align:center; min-height:20px;} QProgressBar::chunk {background:#43b6dd;}')
  app.setWindowIcon(QIcon(str(resource('app.ico'))))
- w=Window(); w.show(); sys.exit(app.exec())
+ w=Window()
+ if '--ebs-ui-smoke' in sys.argv:
+  assert not FONT_ERRORS,FONT_ERRORS
+  assert not w.windowIcon().isNull(),'Missing icon'
+  for i in range(3):w.lang.setCurrentIndex(i)
+  assert w.tabs.count()==8
+  if sys.platform=='darwin':assert w.tabs.isTabEnabled(6) and not w.tabs.isTabEnabled(0)
+  print('EBS_UI_SMOKE_OK',flush=True);w.close();return
+ w.show(); sys.exit(app.exec())
 if __name__=='__main__':main()
