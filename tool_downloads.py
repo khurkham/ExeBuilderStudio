@@ -5,9 +5,9 @@ from urllib.parse import urljoin, urlparse
 from urllib.request import Request, build_opener, HTTPSHandler, HTTPRedirectHandler
 from html.parser import HTMLParser
 APP_VERSION = '1.0'
-BUILD_REVISION = '2026.10.09.5'
+BUILD_REVISION = '2026.10.10.1'
 # Publisher configures this before building. End users do not set an update source.
-UPDATE_REPOSITORY = ''
+UPDATE_REPOSITORY = 'khurkham/ExeBuilderStudio'
 NAMES = {'java':'Java (Temurin JDK)', 'launch4j':'Launch4j', 'inno':'Inno Setup', 'python':'Python', 'pyinstaller':'PyInstaller', 'sdk':'Windows SDK / SignTool', 'studio':'ExeBuilderStudio'}
 class Cancelled(Exception): pass
 
@@ -64,7 +64,7 @@ def github_release(repo):
     repo=repo.strip().removesuffix('.git').rstrip('/')
     if repo.startswith('https://github.com/'):repo=repo[len('https://github.com/'):].split('/releases')[0]
     if not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+',repo):
-        raise ValueError('Set the GitHub repository in About (owner/repository).')
+        raise ValueError('The publisher update repository is invalid.')
     release=fetch('https://api.github.com/repos/'+repo+'/releases/latest',True)
     assets=[a for a in release.get('assets',[]) if a['name'].lower().endswith('.exe') and 'setup' in a['name'].lower()]
     if not assets:raise ValueError('The latest release needs an ExeBuilderStudio_Setup.exe asset.')
