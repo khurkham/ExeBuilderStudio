@@ -12,6 +12,11 @@ class MacPlans(unittest.TestCase):
     def plan(self,**kw):
         values=dict(python=str(self.tool),source=str(self.source),output=str(self.root/'out'),name='My App',identifier='com.khurkham.app');values.update(kw)
         with patch('mac_backend.sys.platform','darwin'):return mac.python_plan(**values)
+    @unittest.skipIf(os.name=='nt', 'Unix interpreter symlink semantics')
+    def test_virtual_environment_interpreter_symlink_preserved(self):
+        venv=self.root/'venv/bin';venv.mkdir(parents=True);link=venv/'python3';link.symlink_to(self.tool)
+        self.assertEqual(mac.executable(str(link)),str(link))
+
     def test_cross_build_rejected(self):
         with patch('mac_backend.sys.platform','win32'),self.assertRaises(ValueError):mac.require_mac()
     def test_app_arguments_and_data_with_spaces(self):

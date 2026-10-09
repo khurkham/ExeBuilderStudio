@@ -14,7 +14,8 @@ def bundle_id(value):
     return value
 
 def executable(value):
-    path=Path(value).expanduser().resolve()
+    # Resolving a venv interpreter symlink loses pyvenv.cfg and its packages.
+    path=Path(os.path.abspath(Path(value).expanduser()))
     if not path.is_file() or not os.access(path,os.X_OK):
         raise ValueError('Select an executable macOS tool: '+str(path))
     return str(path)
