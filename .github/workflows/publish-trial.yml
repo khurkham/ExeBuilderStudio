@@ -1,0 +1,27 @@
+name: Publish verified cross-platform trial
+on:
+  push:
+    branches: [trial/macos]
+    paths: [.github/workflows/publish-trial.yml]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: packages
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: 37988895229
+      - name: Publish tested packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mapfile -t files < <(find packages -type f \( -name '*.dmg' -o -name '*.exe' \))
+          test "${#files[@]}" -eq 3
+          sha256sum "${files[@]}" | sed 's@  .*/@  @' > SHA256SUMS.txt
+          gh release create trial-macos-20261010 "${files[@]}" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'ExeBuilderStudio 1.0.0 Windows + macOS trial' --notes 'Version 1.0.0 trial. Windows Setup plus Apple Silicon/Intel APP and DMG. Native tests passed on all three systems. Python APP, Java APP and DMG integration smoke passed on both Mac architectures. Embedded Thai/Shan fonts and icons checked in packaged Mac app. Mac packages are not Developer ID signed or notarized. Build locally on the matching OS; no remote-project build UI or Mac auto-updater yet. See README_MAC_TRIAL_TH.md. Stable release is unchanged.'
