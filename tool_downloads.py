@@ -4,8 +4,8 @@ from pathlib import Path
 from urllib.parse import urljoin, urlparse
 from urllib.request import Request, build_opener, HTTPSHandler, HTTPRedirectHandler
 from html.parser import HTMLParser
-APP_VERSION = '1.0'
-BUILD_REVISION = '2026.10.10.1'
+APP_VERSION = '1.0.1'
+BUILD_REVISION = '2026.10.10.2'
 # Publisher configures this before building. End users do not set an update source.
 UPDATE_REPOSITORY = 'khurkham/ExeBuilderStudio'
 NAMES = {'java':'Java (Temurin JDK)', 'launch4j':'Launch4j', 'inno':'Inno Setup', 'python':'Python', 'pyinstaller':'PyInstaller', 'sdk':'Windows SDK / SignTool', 'studio':'ExeBuilderStudio'}
@@ -172,7 +172,7 @@ def executable_version(path):
     if os.name!='nt':return ''
     # Argument is supplied through the environment, never embedded in PowerShell code.
     env=os.environ.copy();env['EBS_TOOL_PATH']=str(path)
-    result=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-Command','(Get-Item -LiteralPath $env:EBS_TOOL_PATH).VersionInfo.ProductVersion'],env=env,capture_output=True,text=True,timeout=5,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+    result=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-Command','(Get-Item -LiteralPath $env:EBS_TOOL_PATH).VersionInfo.ProductVersion'],env=env,capture_output=True,text=True,errors='replace',timeout=5,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
     return result.stdout.strip()
 
 def detect_tool(key,configured=''):
@@ -185,7 +185,8 @@ def detect_tool(key,configured=''):
             elif key=='java':v=run_capture([configured,'-version'])
             else:v=executable_version(configured)
         except subprocess.TimeoutExpired:return {'found':True,'path':configured,'version':''}
-        except (ValueError,OSError):pass
+        except (ValueError,OSError):
+            if key in ('inno','launch4j','sdk'):return {'found':True,'path':configured,'version':''}
         else:return {'found':True,'path':configured,'version':v}
     names={'launch4j':'launch4jc.exe','inno':'ISCC.exe','python':'python.exe'}
     paths=[]
@@ -219,7 +220,9 @@ def detect_tool(key,configured=''):
                 else:v=executable_version(path)
             except subprocess.TimeoutExpired:
                 return {'found':True,'path':path,'version':''}
-            except (ValueError,OSError):continue
+            except (ValueError,OSError):
+                if key not in ('inno','launch4j','sdk'):continue
+                v=''
             detected={'found':True,'path':path,'version':v}
             if key=='python' and not configured:candidates.append(detected)
             else:return detected

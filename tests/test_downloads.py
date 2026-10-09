@@ -70,6 +70,13 @@ class DownloadTests(unittest.TestCase):
         self.assertTrue(result['found']);search.assert_not_called()
         with patch.object(td,'run_capture',side_effect=td.subprocess.TimeoutExpired('java',5)):
             self.assertTrue(td.detect_tool('java',str(path))['found'])
+    def test_installed_compiler_survives_version_metadata_failure(self):
+        for key,name in [('inno','ISCC.exe'),('launch4j','launch4jc.exe')]:
+            path=self.root/name;path.write_bytes(b'MZtest')
+            with patch.object(td,'executable_version',side_effect=UnicodeDecodeError('utf-8',b'\xff',0,1,'invalid')):
+                result=td.detect_tool(key,str(path))
+            self.assertTrue(result['found']);self.assertEqual(result['path'],str(path))
+            self.assertEqual(result['version'],'')
     def test_https_only(self):
         for value in ['http://example.com/file.exe','file:///etc/passwd','https://user:secret@example.com/file']:
             with self.assertRaises(ValueError):td.validate_url(value)
