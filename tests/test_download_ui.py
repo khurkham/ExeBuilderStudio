@@ -43,8 +43,7 @@ class DownloadUITests(unittest.TestCase):
         self.assertFalse(hasattr(self.window,'update_label'))
         self.assertFalse(hasattr(self.window,'update_save'))
         self.window.settings.setValue('updates/repository','Untrusted/UserSetting')
-        with patch.object(ui,'UPDATE_REPOSITORY',''):
-            studio=self.window.tool_cards[-1]
+        studio=self.window.tool_cards[-1]
         with patch.object(ui,'UPDATE_REPOSITORY',''):
             studio.begin('update')
         self.assertEqual(studio.state,'notconfigured');self.assertIn('ผู้พัฒนา',studio.status.text())
