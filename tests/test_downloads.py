@@ -90,7 +90,7 @@ class DownloadTests(unittest.TestCase):
         self.assertFalse(result['found']);self.assertIn('ISCC.exe',result['error'])
     def test_per_user_inno_discovery(self):
         p=self.root/'Programs/Inno Setup 7/ISCC.exe';p.parent.mkdir(parents=True);p.write_bytes(b'MZ')
-        with patch.dict(os.environ,{'LOCALAPPDATA':str(self.root)}),patch.object(td,'registered_tool_paths',return_value=[]),patch.object(td.shutil,'which',return_value=None),patch.object(td,'executable_version',return_value='7'):
+        with patch.dict(os.environ,{'LOCALAPPDATA':str(self.root),'ProgramFiles':str(self.root/'empty64'),'ProgramFiles(x86)':str(self.root/'empty32')}),patch.object(td,'registered_tool_paths',return_value=[]),patch.object(td.shutil,'which',return_value=None),patch.object(td,'executable_version',return_value='7'):
             self.assertEqual(td.detect_tool('inno')['path'],str(p))
     def test_registry_location_and_bounded_python_probe(self):
         p=self.root/'custom/python.exe';p.parent.mkdir();p.write_bytes(b'MZ')
