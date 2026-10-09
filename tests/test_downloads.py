@@ -77,6 +77,37 @@ class DownloadTests(unittest.TestCase):
                 result=td.detect_tool(key,str(path))
             self.assertTrue(result['found']);self.assertEqual(result['path'],str(path))
             self.assertEqual(result['version'],'')
+    def test_version_equivalence_and_release_version(self):
+        self.assertEqual(td.APP_VERSION,'1.0.0')
+        self.assertEqual(td.version_key('1.0'),td.version_key('1.0.0'))
+        self.assertGreater(td.version_key('1.0.1'),td.version_key('1.0.0'))
+    def test_quoted_configured_compiler_and_wrong_executable(self):
+        p=self.root/'ISCC.exe';p.write_bytes(b'MZ')
+        with patch.object(td,'executable_version',return_value='7.1'):
+            self.assertEqual(td.detect_tool('inno','"'+str(p)+'"')['path'],str(p))
+        p=self.root/'ISIDE.exe';p.write_bytes(b'MZ')
+        result=td.detect_tool('inno',str(p))
+        self.assertFalse(result['found']);self.assertIn('ISCC.exe',result['error'])
+    def test_per_user_inno_discovery(self):
+        p=self.root/'Programs/Inno Setup 7/ISCC.exe';p.parent.mkdir(parents=True);p.write_bytes(b'MZ')
+        with patch.dict(os.environ,{'LOCALAPPDATA':str(self.root)}),patch.object(td,'registered_tool_paths',return_value=[]),patch.object(td.shutil,'which',return_value=None),patch.object(td,'executable_version',return_value='7'):
+            self.assertEqual(td.detect_tool('inno')['path'],str(p))
+    def test_registry_location_and_bounded_python_probe(self):
+        p=self.root/'custom/python.exe';p.parent.mkdir();p.write_bytes(b'MZ')
+        with patch.object(td,'registered_tool_paths',return_value=[str(p),str(p)]),patch.object(td.shutil,'which',return_value=None),patch.object(td,'run_capture',return_value='3.13.8') as run:
+            self.assertTrue(td.detect_tool('python')['found'])
+        run.assert_called_once();self.assertEqual(run.call_args.kwargs['timeout'],3)
+    def test_pyinstaller_missing_differs_from_probe_failure(self):
+        p=self.root/'python.exe';p.write_bytes(b'MZ')
+        with patch.object(td,'run_capture',return_value='EBS_MISSING'):
+            result=td.detect_tool('pyinstaller',str(p));self.assertFalse(result['found']);self.assertNotIn('error',result)
+        with patch.object(td,'run_capture',side_effect=td.subprocess.TimeoutExpired('python',3)):
+            result=td.detect_tool('pyinstaller',str(p));self.assertIn('error',result)
+    def test_broken_java_reports_presence_and_diagnostic(self):
+        p=self.root/'java.exe';p.write_bytes(b'MZ')
+        with patch.object(td,'run_capture',side_effect=OSError('Cannot execute')):
+            result=td.detect_tool('java',str(p))
+        self.assertTrue(result['found']);self.assertIn('Cannot execute',result['error'])
     def test_https_only(self):
         for value in ['http://example.com/file.exe','file:///etc/passwd','https://user:secret@example.com/file']:
             with self.assertRaises(ValueError):td.validate_url(value)

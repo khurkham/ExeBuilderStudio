@@ -4,8 +4,8 @@ from pathlib import Path
 from urllib.parse import urljoin, urlparse
 from urllib.request import Request, build_opener, HTTPSHandler, HTTPRedirectHandler
 from html.parser import HTMLParser
-APP_VERSION = '1.0.1'
-BUILD_REVISION = '2026.10.10.2'
+APP_VERSION = '1.0.0'
+BUILD_REVISION = '2026.10.09.3'
 # Publisher configures this before building. End users do not set an update source.
 UPDATE_REPOSITORY = 'khurkham/ExeBuilderStudio'
 NAMES = {'java':'Java (Temurin JDK)', 'launch4j':'Launch4j', 'inno':'Inno Setup', 'python':'Python', 'pyinstaller':'PyInstaller', 'sdk':'Windows SDK / SignTool', 'studio':'ExeBuilderStudio'}
@@ -15,7 +15,9 @@ def app_data():
     return Path(os.environ.get('LOCALAPPDATA',Path.home()/'.local/share'))/'ExeBuilderStudio'
 
 def version_key(value):
-    return tuple(int(x) for x in re.findall(r'\d+', str(value)))
+    parts = [int(x) for x in re.findall(r'\d+', str(value))]
+    while parts and parts[-1] == 0: parts.pop()
+    return tuple(parts)
 
 def validate_url(url):
     p=urlparse(url)
@@ -172,61 +174,95 @@ def executable_version(path):
     if os.name!='nt':return ''
     # Argument is supplied through the environment, never embedded in PowerShell code.
     env=os.environ.copy();env['EBS_TOOL_PATH']=str(path)
-    result=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-Command','(Get-Item -LiteralPath $env:EBS_TOOL_PATH).VersionInfo.ProductVersion'],env=env,capture_output=True,text=True,errors='replace',timeout=5,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+    result=subprocess.run([str(Path(os.environ.get('SystemRoot','C:/Windows'))/'System32/WindowsPowerShell/v1.0/powershell.exe'),'-NoProfile','-NonInteractive','-Command','(Get-Item -LiteralPath $env:EBS_TOOL_PATH).VersionInfo.ProductVersion'],env=env,capture_output=True,text=True,errors='replace',timeout=5,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
     return result.stdout.strip()
+
+def normalize_tool_path(value):
+    return os.path.expandvars(os.path.expanduser(str(value).strip().strip('"')))
+
+def registered_tool_paths(key):
+    """Read installed locations without scanning drives or contacting the network."""
+    try: import winreg
+    except ImportError: return []
+    names={'inno':('inno setup', 'ISCC.exe'), 'launch4j':('launch4j','launch4jc.exe'),
+           'python':('python','python.exe'), 'java':('jdk','bin/java.exe')}
+    if key not in names: return []
+    needle,exe=names[key]; paths=[]
+    for hive in (winreg.HKEY_CURRENT_USER,winreg.HKEY_LOCAL_MACHINE):
+        for view in (winreg.KEY_WOW64_64KEY,winreg.KEY_WOW64_32KEY):
+            try:
+                with winreg.OpenKey(hive,r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',0,winreg.KEY_READ|view) as root:
+                    for index in range(winreg.QueryInfoKey(root)[0]):
+                        try:
+                            with winreg.OpenKey(root,winreg.EnumKey(root,index)) as item:
+                                name=str(winreg.QueryValueEx(item,'DisplayName')[0]).lower()
+                                if needle in name:
+                                    location=normalize_tool_path(winreg.QueryValueEx(item,'InstallLocation')[0])
+                                    if location: paths.append(str(Path(location)/exe))
+                        except OSError: continue
+            except OSError: continue
+    if key=='python':
+        for hive in (winreg.HKEY_CURRENT_USER,winreg.HKEY_LOCAL_MACHINE):
+            for view in (winreg.KEY_WOW64_64KEY,winreg.KEY_WOW64_32KEY):
+                try:
+                    with winreg.OpenKey(hive,r'SOFTWARE\Python',0,winreg.KEY_READ|view) as root:
+                        for i in range(winreg.QueryInfoKey(root)[0]):
+                            with winreg.OpenKey(root,winreg.EnumKey(root,i)) as company:
+                                for j in range(winreg.QueryInfoKey(company)[0]):
+                                    try:
+                                        with winreg.OpenKey(company,winreg.EnumKey(company,j)+r'\InstallPath') as install:
+                                            try: paths.append(str(winreg.QueryValueEx(install,'ExecutablePath')[0]))
+                                            except OSError: paths.append(str(Path(winreg.QueryValueEx(install,'')[0])/'python.exe'))
+                                    except OSError: continue
+                except OSError: continue
+    return paths
 
 def detect_tool(key,configured=''):
     from backend import java_candidates
     from signing import detect_signtool
+    configured=normalize_tool_path(configured)
     if key=='studio':return {'path':sys.executable,'version':APP_VERSION,'found':True}
-    if key!='pyinstaller' and configured and Path(configured).is_file():
-        try:
-            if key=='python':v=run_capture([configured,'-c','import sys; print(".".join(map(str,sys.version_info[:3])))'])
-            elif key=='java':v=run_capture([configured,'-version'])
-            else:v=executable_version(configured)
-        except subprocess.TimeoutExpired:return {'found':True,'path':configured,'version':''}
-        except (ValueError,OSError):
-            if key in ('inno','launch4j','sdk'):return {'found':True,'path':configured,'version':''}
-        else:return {'found':True,'path':configured,'version':v}
+    if key=='pyinstaller':
+        if not configured or not Path(configured).is_file():
+            return {'found':False,'path':configured,'version':'','error':'Select an installed Python interpreter first.'}
+        # A missing module is different from an interpreter that cannot be queried.
+        script='import importlib.util; s=importlib.util.find_spec("PyInstaller"); print("EBS_MISSING" if s is None else __import__("PyInstaller").__version__)'
+        try: v=run_capture([configured,'-c',script],timeout=3)
+        except (ValueError,OSError,subprocess.TimeoutExpired) as exc:
+            return {'found':False,'path':configured,'version':'','error':str(exc)}
+        return {'found':v!='EBS_MISSING','path':configured,'version':'' if v=='EBS_MISSING' else v}
     names={'launch4j':'launch4jc.exe','inno':'ISCC.exe','python':'python.exe'}
+    def probe(path,timeout=3):
+        try:
+            if key=='python':v=run_capture([path,'-c','import sys; print(".".join(map(str,sys.version_info[:3])))'],timeout=timeout)
+            elif key=='java':v=run_capture([path,'-version'],timeout=timeout)
+            else:v=executable_version(path)
+            return {'found':True,'path':path,'version':v}
+        except (ValueError,OSError,subprocess.TimeoutExpired) as exc:
+            # Preserve presence; show inability to verify rather than "not installed".
+            return {'found':True,'path':path,'version':'','error':str(exc)}
+    if configured and Path(configured).is_file():
+        if key in ('inno','launch4j','sdk') and Path(configured).name.lower()!= {'inno':'iscc.exe','launch4j':'launch4jc.exe','sdk':'signtool.exe'}[key]:
+            return {'found':False,'path':configured,'version':'','error':'Select '+{'inno':'ISCC.exe (compiler, not ISIDE.exe)','launch4j':'launch4jc.exe','sdk':'signtool.exe'}[key]}
+        return probe(configured)
     paths=[]
-    if configured and Path(configured).is_file():paths.append(configured)
     if key=='java':paths+=java_candidates()
     if key=='sdk':paths+=[detect_signtool()]
     if key in names:
         found=shutil.which(names[key])
         if found:paths.append(found)
+    paths+=registered_tool_paths(key)
     roots=[Path(os.environ.get('ProgramFiles','C:/Program Files')),Path(os.environ.get('ProgramFiles(x86)','C:/Program Files (x86)')),Path(os.environ.get('LOCALAPPDATA',str(Path.home())))]
-    if key=='inno':
-        paths += [str(root/f'Inno Setup {n}'/'ISCC.exe') for root in roots for n in [7,6]]
-    if key=='launch4j':paths += [str(root/'Launch4j/launch4jc.exe') for root in roots]
+    if key=='inno':paths += [str(root/sub/f'Inno Setup {n}'/'ISCC.exe') for root in roots for sub in ('','Programs') for n in [7,6,5]]
+    if key=='launch4j':paths += [str(root/sub/'Launch4j/launch4jc.exe') for root in roots for sub in ('','Programs')]
     if key=='python':
         for root in roots:
             paths += [str(p) for pattern in ['Programs/Python/Python*/python.exe','Python/pythoncore-*/python.exe','Python*/python.exe'] for p in root.glob(pattern)]
     pattern=names.get(key,'java.exe' if key=='java' else '')
     if pattern:paths += [str(p) for p in sorted((app_data()/'tools'/key).glob('**/'+pattern),reverse=True)]
-    if key=='pyinstaller':
-        if not configured or not Path(configured).is_file():return {'found':False,'path':'','version':''}
-        try:v=run_capture([configured,'-c','import PyInstaller;print(PyInstaller.__version__)'])
-        except (ValueError,subprocess.TimeoutExpired,OSError):return {'found':False,'path':configured,'version':''}
-        return {'found':True,'path':configured,'version':v}
-    candidates=[]
+    # One bounded probe, no serial five-second queries for every Python installation.
     for path in dict.fromkeys(paths):
-        if path and Path(path).is_file() and 'WindowsApps' not in path:
-            try:
-                if key=='python':
-                    v=run_capture([path,'-c','import sys; print(".".join(map(str,sys.version_info[:3])))'])
-                elif key=='java':v=run_capture([path,'-version'])
-                else:v=executable_version(path)
-            except subprocess.TimeoutExpired:
-                return {'found':True,'path':path,'version':''}
-            except (ValueError,OSError):
-                if key not in ('inno','launch4j','sdk'):continue
-                v=''
-            detected={'found':True,'path':path,'version':v}
-            if key=='python' and not configured:candidates.append(detected)
-            else:return detected
-    if candidates:return max(candidates,key=lambda x:version_key(x['version']))
+        if path and Path(path).is_file() and 'windowsapps' not in str(path).lower():return probe(path)
     return {'found':False,'path':'','version':''}
 
 def verify_publisher(path,publisher):

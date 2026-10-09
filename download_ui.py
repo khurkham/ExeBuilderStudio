@@ -11,6 +11,7 @@ WORDS={
  'update':('Update','อัปเดต','ဢပ်ႉတဵတ်ႉ'),
  'install':('Install downloaded file','ติดตั้งไฟล์ที่ดาวน์โหลด','တိတ်းတင်ႈၾၢႆႇလူတ်ႇယဝ်ႉ'),
  'missing':('Not installed. Please download the program.','ยังไม่มีในเครื่อง กรุณาดาวน์โหลดโปรแกรม','ဢမ်ႇမီးၼႂ်းၶွမ်း။ ၶႅၼ်းတေႃႈလူတ်ႇပရူဝ်ႇၵရမ်ႇ။'),
+ 'unverified':('Found; version could not be verified','พบไฟล์โปรแกรม แต่ตรวจสอบเวอร์ชันไม่ได้','မီးၾၢႆႇပရူဝ်ႇၵရမ်ႇ။ ၵူတ်ႇဝႃးသျိၼ်းဢမ်ႇလႆႈ။'),
  'found':('Installed','พบโปรแกรมในเครื่อง','မီးၼႂ်းၶွမ်းယဝ်ႉ'),
  'ready':('Ready to install','ดาวน์โหลดเสร็จ พร้อมติดตั้ง','လူတ်ႇယဝ်ႉ တိတ်းတင်ႈလႆႈ'),
  'checking':('Checking…','กำลังตรวจสอบ…','တိုၵ်ႉၵူတ်ႇ…'),
@@ -68,7 +69,9 @@ class ToolWorker(QThread):
                 self.child=subprocess.Popen([str(path)])
                 code=self.child.wait();self.child=None
                 if code not in (0,3010):raise ValueError(f'Installer exited with code {code}; check again or retry.')
-                self.result.emit({'detected':detect_tool(self.key,''),'installed':True,'restart':code==3010});return
+                detected=detect_tool(self.key,'')
+                if not detected['found'] and self.configured:detected=detect_tool(self.key,self.configured)
+                self.result.emit({'detected':detected,'installed':True,'restart':code==3010});return
             self.phase.emit('resolving')
             if self.key=='pyinstaller':
                 directory=app_data()/'downloads'/'pyinstaller'/str(time.time_ns());directory.mkdir(parents=True)
@@ -159,6 +162,8 @@ class ToolCard(QWidget):
             self.artifact=result['artifact'];self.host.settings.setValue('downloads/'+self.key+'/artifact',json.dumps(self.artifact));self.state='ready';self.detail=self.artifact['release']['version']+'\n'+self.artifact['path'];self.bar.setRange(0,100);self.bar.setValue(100)
         else:
             self.detected=result['detected'];self.state='current' if result.get('current') else 'found' if self.detected['found'] else 'missing';self.detail=(self.detected['version']+'\n'+self.detected['path']).strip()
+            if self.detected.get('error'):self.state='unverified' if self.detected['found'] else 'failed';self.detail+='\n'+self.detected['error']
+            elif self.detected['found'] and not self.detected['version']:self.state='unverified'
             if self.detected['found']:
                 field={'launch4j':'tools/launch4jc','inno':'tools/ISCC','python':'tools/Python interpreter','sdk':'signing/signtool'}.get(self.key)
                 if field:self.host.fields[field].setText(self.detected['path'])

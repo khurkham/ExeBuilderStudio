@@ -2,7 +2,7 @@
 [Setup]
 AppId={{D8E2ADBD-AD56-4445-A82F-7DA1EFA564B6}
 AppName=EXE Builder Studio
-AppVersion=1.0.1
+AppVersion=1.0.0
 AppPublisher=Khurkham Langkhur
 DefaultDirName={localappdata}\Programs\ExeBuilderStudio
 DefaultGroupName=EXE Builder Studio

@@ -35,6 +35,22 @@ def detect_signtool():
     roots = dict.fromkeys([os.environ.get('ProgramFiles(x86)', 'C:/Program Files (x86)'),
                           os.environ.get('ProgramFiles', 'C:/Program Files')])
     candidates = []
+    registered = []
+    try:
+        import winreg
+        for view in (winreg.KEY_WOW64_64KEY, winreg.KEY_WOW64_32KEY):
+            try:
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\Microsoft\Windows Kits\Installed Roots', 0, winreg.KEY_READ | view) as key:
+                    for name in ('KitsRoot10', 'KitsRoot81'):
+                        try: registered.append(Path(winreg.QueryValueEx(key, name)[0]) / 'bin')
+                        except OSError: pass
+            except OSError: pass
+    except ImportError:
+        pass
+    for base in registered:
+        for architecture in dict.fromkeys((arch, 'x86')):
+            candidates.extend(base.glob(f'*/{architecture}/signtool.exe'))
+            candidates.extend(base.glob(f'{architecture}/signtool.exe'))
     for root in roots:
         for kit in ('10', '8.1'):
             base = Path(root) / 'Windows Kits' / kit / 'bin'
