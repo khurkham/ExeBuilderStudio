@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+build/
+dist/
+installer_output/
+*.spec
+*.pfx
+*.p12
