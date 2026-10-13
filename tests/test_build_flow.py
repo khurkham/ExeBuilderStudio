@@ -112,8 +112,8 @@ class BuildFlowTests(unittest.TestCase):
         self.assertEqual(self.window.v('signing','thumbprint'),'CD'*20)
 
     def test_certificate_created_only_after_sdk_success_and_detection(self):
-        with patch('main.QFileDialog.getOpenFileName',return_value=(str(self.tool),'')), \
-             patch('main.detect_signtool',return_value=str(self.tool)):
+        with patch('app.window.QFileDialog.getOpenFileName',return_value=(str(self.tool),'')), \
+             patch('app.window.detect_signtool',return_value=str(self.tool)):
             self.window.install_sdk()
             self.assertEqual(self.calls[0]['payload']['action'],'install-sdk')
             self.assertEqual(len(self.calls),1)
@@ -121,8 +121,8 @@ class BuildFlowTests(unittest.TestCase):
             self.assertEqual(self.calls[1]['payload']['action'],'ensure')
 
     def test_sdk_without_signing_tools_does_not_claim_success(self):
-        with patch('main.QFileDialog.getOpenFileName',return_value=(str(self.tool),'')), \
-             patch('main.detect_signtool',return_value=''):
+        with patch('app.window.QFileDialog.getOpenFileName',return_value=(str(self.tool),'')), \
+             patch('app.window.detect_signtool',return_value=''):
             self.window.install_sdk()
             with self.assertRaisesRegex(ValueError,'SignTool not found'):
                 self.calls[0]['callback']('EBS_JSON:{"installed":true}')
