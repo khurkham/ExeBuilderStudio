@@ -37,6 +37,21 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Build_Studio.ps1 -CreateIn
 
 This requires Python and Inno Setup on the build machine. The installer is written to `installer_output`.
 
+## GitHub Releases and macOS in-app updates
+
+Published releases should use matching version numbers across Windows and macOS. The Windows installer remains `ExeBuilderStudio_Setup.exe`; the macOS updater looks for a DMG asset whose filename includes both `macOS` and the current Mac architecture, for example `ExeBuilderStudio-1.1-macOS-arm64.dmg` or `ExeBuilderStudio-1.1-macOS-x86_64.dmg`.
+
+On macOS, open **About → Check for Updates**. The app checks the latest stable public GitHub Release, downloads the matching DMG over HTTPS, verifies its SHA-256 digest against GitHub's release asset metadata, and opens the disk image. The current build is not code-signed or notarized, so it does not silently replace a running app: quit ExeBuilderStudio and drag the new app into Applications, choosing Replace when prompted.
+
+### Publishing a release
+
+1. Update `APP_VERSION` and `BUILD_REVISION` in `app/services/tool_downloads.py` and test the Windows build.
+2. Run **Windows installer release (manual only)** from GitHub Actions to publish the Windows Setup EXE and create the versioned GitHub Release if needed.
+3. Run **Temporary macOS DMG release (run once)** from GitHub Actions to build the native DMG, upload it and its SHA-256 sidecar to that same release, and remove the temporary macOS workflow after successful publication.
+4. Verify both assets are present in the same GitHub Release. The Windows and macOS updater each select the matching installer asset for their platform.
+
+GitHub Actions workflows are manual-only; pushing code does not trigger a build. The macOS release workflow is intended to be temporary and self-removes after a successful publish. The Windows workflow remains available for manual releases. A public GitHub repository using standard GitHub-hosted runners is generally eligible for free Actions usage, but check the account's current plan and billing page before running.
+
 ## Tests and limitations
 
 Unit tests cover build services, Windows/macOS packaging helpers, and tool downloads. Native builds must be tested on their respective operating systems because platform packaging tools are OS-specific. Dynamic Python imports, unusual resource loading, and platform-specific dependencies may require project-specific adjustments.
