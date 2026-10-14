@@ -1,4 +1,4 @@
-# EXE Builder Studio 1.1
+# EXE Builder Studio 1.2
 
 โปรแกรม Desktop สำหรับสร้างตัวติดตั้ง Windows และ macOS รองรับเมนู English / ไทย / တႆး
 
