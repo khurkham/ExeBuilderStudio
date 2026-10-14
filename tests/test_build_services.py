@@ -15,7 +15,8 @@ from app.services.installer_builder import prepare_installer_build
 class BuildServiceTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.root = Path(self.temp.name)
+        # Resolve Windows short-path aliases (for example RUNNER~1) consistently.
+        self.root = Path(self.temp.name).resolve()
         self.tool = self.root / 'tool.exe'
         self.tool.write_bytes(b'MZ')
 
