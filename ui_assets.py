@@ -1,4 +1,4 @@
-"""Embedded assets resolved identically in Python, PyInstaller onedir and onefile."""
+"""Embedded assets resolved identically in Python and PyInstaller onedir."""
 import sys
 from pathlib import Path
 from PySide6.QtGui import QFont, QFontDatabase

@@ -1,56 +1,235 @@
 """UI labels for English, Thai, and Shan."""
 
-T={
- 'title':('EXE Builder Studio','โปรแกรมสร้าง EXE','ပရူဝ်ႇၵရမ်ႇသၢင်ႈ EXE'),
- 'java':('Java JAR → EXE','Java JAR → EXE','Java JAR → EXE'),
- 'python':('Python → EXE','Python → EXE','Python → EXE'),
- 'installer':('Installer','ตัวติดตั้ง','တူဝ်တိတ်းတင်ႈ'),
- 'icon':('Logo → ICO','โลโก้ → ICO','လူဝ်ႇၵူဝ်ႇ → ICO'),
- 'tools':('Tools / Java','เครื่องมือ / Java','ၶိူင်ႈမိုဝ်း / Java'),
- 'browse':('Browse','เลือกไฟล์','လိူၵ်ႈၾၢႆႇ'),
- 'build':('Build EXE','สร้าง EXE','သၢင်ႈ EXE'),
- 'source':('Source file','ไฟล์ต้นฉบับ','ၾၢႆႇတူၼ်ႈတေႃ'),
- 'output':('Output folder','โฟลเดอร์ผลลัพธ์','ၾူဝ်ႇလ်ႇတိူဝ်ႇဢွၵ်ႇ'),
- 'name':('App name (English)','ชื่อโปรแกรม (อังกฤษ)','ၸိုဝ်ႈပရူဝ်ႇၵရမ်ႇ (ဢင်းၵိတ်ႉ)'),
- 'version':('Version','เวอร์ชัน','ဝႃးသျိၼ်း'),
- 'publisher':('Publisher','ผู้พัฒนา','ၽူႈသၢင်ႈ'),
- 'minimum':('Minimum Java version','Java ขั้นต่ำ','Java ဝႃးသျိၼ်းတႅမ်ႇသုတ်း'),
- 'jre':('Bundle Java folder (optional)','โฟลเดอร์ Java ที่รวมไปด้วย (ไม่บังคับ)','ၾူဝ်ႇလ်ႇတိူဝ်ႇ Java (လိူၵ်ႈလႆႈ)'),
- 'console':('Show console','แสดง Console','ၼႄ Console'),
- 'onefile':('Single EXE file','ไฟล์ EXE เดียว','EXE ၾၢႆႇလဵဝ်'),
- 'data':('Extra data folder (optional)','โฟลเดอร์ข้อมูลเพิ่มเติม (ไม่บังคับ)','ၾူဝ်ႇလ်ႇတိူဝ်ႇၶေႃႈမုၼ်း (လိူၵ်ႈလႆႈ)'),
- 'hidden':('Hidden imports (comma-separated)','Hidden imports (คั่นด้วยจุลภาค)','Hidden imports (ၶႅၼ်ႈၽၢတ်ႇၵွမ်ႇမႃႇ)'),
- 'folder':('Release folder to install','โฟลเดอร์โปรแกรมที่จะติดตั้ง','ၾူဝ်ႇလ်ႇတိူဝ်ႇပရူဝ်ႇၵရမ်ႇ'),
- 'exe':('EXE filename in release folder','ชื่อไฟล์ EXE ในโฟลเดอร์','ၸိုဝ်ႈၾၢႆႇ EXE'),
- 'makeinstaller':('Build installer','สร้างตัวติดตั้ง','သၢင်ႈတူဝ်တိတ်းတင်ႈ'),
- 'convert':('Convert to ICO','แปลงเป็น ICO','ပိၼ်ႇပဵၼ် ICO'),
- 'check':('Check Java','ตรวจ Java','ၵူတ်ႇထတ်း Java'),
- 'stop':('Stop','หยุด','ၵိုတ်း'),
- 'open':('Open output folder','เปิดโฟลเดอร์ผลลัพธ์','ပိုတ်ႇၾူဝ်ႇလ်ႇတိူဝ်ႇဢွၵ်ႇ'),
- 'save':('Save tool settings','บันทึกเครื่องมือ','သိမ်းၶိူင်ႈမိုဝ်း'),
- 'installjava':('Download / install Java','ดาวน์โหลด / ติดตั้ง Java','လူတ်ႇ / တိတ်းတင်ႈ Java'),
- 'runinstaller':('Run downloaded installer','เปิดไฟล์ติดตั้งที่ดาวน์โหลดแล้ว','ပိုတ်ႇၾၢႆႇတိတ်းတင်ႈ'),
- 'installpython':('Install PyInstaller in selected Python','ติดตั้ง PyInstaller ใน Python ที่เลือก','တိတ်းတင်ႈ PyInstaller ၼႂ်း Python'),
- 'ready':('Ready • Build on Windows','พร้อมใช้งาน • สร้าง EXE บน Windows','တူဝ်ႈတၼ်း • သၢင်ႈ EXE ၼိူဝ် Windows'),
- 'signing':('Certificates / signing','ใบรับรอง / ลงนาม','ဝႂ်ယိုၼ်ယၼ် / လူင်းလၢႆးမိုဝ်း'),
- 'signtool':('SignTool.exe','SignTool.exe','SignTool.exe'),
- 'signmode':('Certificate source','แหล่งใบรับรอง','ဝႂ်ယိုၼ်ယၼ်'),
- 'certpublisher':('Test certificate publisher','ผู้พัฒนาในใบรับรองทดสอบ','ၽူႈသၢင်ႈဝႂ်ယိုၼ်ယၼ်'),
- 'thumbprint':('Certificate thumbprint','Thumbprint ใบรับรอง','Thumbprint ဝႂ်ယိုၼ်ယၼ်'),
- 'timestamp':('RFC 3161 timestamp URL (optional)','URL ประทับเวลา RFC 3161 (ไม่บังคับ)','RFC 3161 timestamp URL'),
- 'autosign':('Sign EXE and Setup after build','ลงนาม EXE และ Setup หลังสร้าง','လူင်းလၢႆးမိုဝ်း EXE / Setup'),
- 'createcert':('Create / reuse test certificate','สร้าง / ใช้ใบรับรองทดสอบเดิม','သၢင်ႈ / ၸႂ်ႉဝႂ်ယိုၼ်ယၼ်'),
- 'listcert':('List installed Code Signing certificates','เลือกใบรับรอง Code Signing ในเครื่อง','လိူၵ်ႈဝႂ်ယိုၼ်ယၼ် Code Signing'),
- 'pfx':('Existing certificate (.pfx / .p12)','ใบรับรองที่มีอยู่ (.pfx / .p12)','ဝႂ်ယိုၼ်ယၼ် (.pfx / .p12)'),
- 'pfxpassword':('PFX password (not saved)','รหัสผ่าน PFX (ไม่บันทึก)','မၢႆလပ်ႉ PFX (ဢမ်ႇသိမ်း)'),
- 'importcert':('Import existing PFX certificate','นำเข้าใบรับรอง PFX ที่มีอยู่','ဢဝ်ဝႂ်ယိုၼ်ယၼ် PFX ၶဝ်ႈ'),
- 'target':('File to sign / verify','ไฟล์ที่จะลงนาม / ตรวจสอบ','ၾၢႆႇလူင်းလၢႆးမိုဝ်း'),
- 'signfile':('Sign selected file','ลงนามไฟล์ที่เลือก','လူင်းလၢႆးမိုဝ်းၾၢႆႇ'),
- 'verifyfile':('Verify signature and Windows trust','ตรวจลายเซ็นและความเชื่อถือของ Windows','ၵူတ်ႇလၢႆးမိုဝ်း / Windows'),
- 'downloadsdk':('Download Microsoft Windows SDK','ดาวน์โหลด Windows SDK จาก Microsoft','လူတ်ႇ Windows SDK'),
- 'installsdk':('Install SDK → create certificate','ติดตั้ง SDK → สร้างใบรับรอง','တိတ်းတင်ႈ SDK → သၢင်ႈဝႂ်ယိုၼ်ယၼ်'),
- 'certfolder':('Open public certificate folder','เปิดโฟลเดอร์ใบรับรองสาธารณะ','ပိုတ်ႇၾူဝ်ႇလ်ႇတိူဝ်ႇဝႂ်ယိုၼ်ယၼ်'),
- 'signnote':('A self-signed certificate is for testing. It does not make other PCs trust your app. No Trusted Root installation is performed.',
-             'ใบรับรองสร้างเองใช้ทดสอบ เครื่องอื่นจะไม่เชื่อถืออัตโนมัติ โปรแกรมไม่เพิ่มใบรับรองเข้า Trusted Root',
-             'ဝႂ်ယိုၼ်ယၼ်သၢင်ႈဢွၵ်ႇႁင်းၵူၺ်း ပဵၼ်တႃႇၸမ်း။ Windows တၢင်ႇၶိူင်ႈ ဢမ်ႇယုမ်ႇယမ်ဢတ်ႉတၼူဝ်ႇ။'),
+T = {
+    # Application title
+    'title': (
+        'EXE Builder Studio',
+        'โปรแกรมสร้าง EXE',
+        'ပရူဝ်ႇၵရႅမ်ႇသၢင်ႈ EXE',
+    ),
+
+    # Windows build tabs
+    'win_java': (
+        'Java JAR → Setup Windows',
+        'Java JAR → Setup Windows',
+        'Java JAR → Setup Windows',
+    ),
+    'win_python': (
+        'Python → Setup Windows',
+        'Python → Setup Windows',
+        'Python → Setup Windows',
+    ),
+
+    # macOS build tabs
+    'mac_java': (
+        'Java JAR → Setup macOS',
+        'Java JAR → Setup macOS',
+        'Java JAR → Setup macOS',
+    ),
+    'mac_python': (
+        'Python → Setup macOS',
+        'Python → Setup macOS',
+        'Python → Setup macOS',
+    ),
+
+    # Windows build actions and descriptions
+    'buildwin': (
+        'Build Setup.exe',
+        'สร้าง Setup.exe',
+        'သၢင်ႈ Setup.exe',
+    ),
+    'win_java_note': (
+        'Builds *_Setup.exe on Windows using JDK 17+ '
+        '(jpackage app-image) and Inno Setup. '
+        'PowerShell and WiX are not required.',
+        'สร้าง *_Setup.exe บน Windows ด้วย JDK 17+ '
+        '(jpackage app-image) และ Inno Setup '
+        'ไม่ต้องใช้ PowerShell หรือ WiX Toolset',
+        'သၢင်ႈ *_Setup.exe ၼိူဝ် Windows လူၺ်ႈ JDK 17+ '
+        '(jpackage app-image) လႄႈ Inno Setup။ '
+        'ဢမ်ႇလူဝ်ႇ PowerShell ဢမ်ႇၼၼ် WiX။',
+    ),
+    'win_python_note': (
+        'Builds *_Setup.exe on Windows using Python, '
+        'PyInstaller, and Inno Setup 6/7. '
+        'PowerShell is not required. Install PyInstaller '
+        'in the selected Python environment first.',
+        'สร้าง *_Setup.exe บน Windows ด้วย Python, '
+        'PyInstaller และ Inno Setup 6/7 ไม่ต้องใช้ PowerShell '
+        'ต้องติดตั้ง PyInstaller ใน Python ที่เลือกก่อน',
+        'သၢင်ႈ *_Setup.exe ၼိူဝ် Windows လူၺ်ႈ Python, '
+        'PyInstaller လႄႈ Inno Setup 6/7။ '
+        'ဢမ်ႇလူဝ်ႇ PowerShell။ '
+        'ဢိၼ်ႇသတေႃး PyInstaller ၼႂ်း Python ဢၼ်လိူၵ်ႈဝႆႉ။',
+    ),
+
+    # macOS build actions and descriptions
+    'buildmac': (
+        'Build Setup.dmg',
+        'สร้าง Setup.dmg',
+        'သၢင်ႈ Setup.dmg',
+    ),
+    'mac_java_source': (
+        'Java JAR file',
+        'ไฟล์ Java JAR',
+        'ၾၢႆႇ Java JAR',
+    ),
+    'mac_python_source': (
+        'Python project folder or .py file',
+        'โฟลเดอร์โปรเจกต์ Python หรือไฟล์ .py',
+        'ၾူဝ်ႇလ်ႇတိူဝ်ႇ Python ဢမ်ႇၼၼ်ၾၢႆႇ .py',
+    ),
+    'mac_java_note': (
+        'Builds *_Setup.dmg directly on macOS. '
+        'Requires a full JDK 17+ with jpackage.',
+        'สร้าง *_Setup.dmg โดยตรงบน macOS '
+        'ต้องมี JDK 17+ ที่มี jpackage',
+        'သၢင်ႈ *_Setup.dmg တူၵ်းၼိူဝ် macOS။ '
+        'လူဝ်ႇမီး JDK 17+ ဢၼ်မီး jpackage။',
+    ),
+    'mac_python_note': (
+        'Builds *_Setup.dmg directly on macOS. '
+        'Requires Python 3; PyInstaller is installed '
+        'in an isolated environment. Check requirements.txt '
+        'for Windows-only packages.',
+        'สร้าง *_Setup.dmg โดยตรงบน macOS ต้องมี Python 3 '
+        'โดยติดตั้ง PyInstaller ในสภาพแวดล้อมแยก '
+        'ควรตรวจ requirements.txt ว่ามีแพ็กเกจเฉพาะ Windows หรือไม่',
+        'သၢင်ႈ *_Setup.dmg တူၵ်းၼိူဝ် macOS။ '
+        'လူဝ်ႇ Python 3၊ PyInstaller တေဢိၼ်ႇသတေႃးၼႂ်း environment '
+        'ထုၵ်ႇလီၸႅတ်ႈ requirements.txt တႃႇ package Windows။',
+    ),
+
+    # Common interface labels
+    'installer': (
+        'Installer',
+        'ตัวติดตั้ง',
+        'တူဝ်ဢိၼ်ႇသတေႃး',
+    ),
+    'icon': (
+        'Logo → ICO / ICNS',
+        'โลโก้ → ICO / ICNS',
+        'လူဝ်ႇၵူဝ်ႇ → ICO / ICNS',
+    ),
+    'tools': (
+        'Tools / Java',
+        'เครื่องมือ / Java',
+        'ၶိူင်ႈမိုဝ်း / Java',
+    ),
+    'browse': (
+        'Browse',
+        'เลือกไฟล์',
+        'လိူၵ်ႈၾၢႆႇ',
+    ),
+    'source': (
+        'Source file',
+        'ไฟล์ต้นฉบับ',
+        'ၾၢႆႇတူၼ်ႈတေႃ',
+    ),
+    'python_source': (
+        'Python file or project folder',
+        'ไฟล์ Python หรือโฟลเดอร์โปรเจกต์',
+        'ၾၢႆႇ Python ဢမ်ႇၼၼ် ၾူဝ်ႇလ်ႇတိူဝ်ႇပရူဝ်ႇၵျႅတ်ႉ',
+    ),
+    'output': (
+        'Output folder',
+        'โฟลเดอร์ผลลัพธ์',
+        'ၾူဝ်ႇလ်ႇတိူဝ်ႇဢွၵ်ႇ',
+    ),
+    'name': (
+        'App name (English)',
+        'ชื่อโปรแกรม (อังกฤษ)',
+        'ၸိုဝ်ႈပရူဝ်ႇၵရႅမ်ႇ (ဢင်းၵိတ်ႉ)',
+    ),
+    'version': (
+        'Version',
+        'เวอร์ชัน',
+        'ဝႃးသျိၼ်း',
+    ),
+    'publisher': (
+        'Publisher',
+        'ผู้พัฒนา',
+        'ၽူႈၶူင်သၢင်ႈ',
+    ),
+    'minimum': (
+        'Minimum Java version',
+        'Java ขั้นต่ำ',
+        'Java ဝႃးသျိၼ်းတႅမ်ႇသုတ်း',
+    ),
+    'data': (
+        'Extra data folder (optional)',
+        'โฟลเดอร์ข้อมูลเพิ่มเติม (ไม่บังคับ)',
+        'ၾူဝ်ႇလ်ႇတိူဝ်ႇၶေႃႈမုၼ်း (လိူၵ်ႈလႆႈ)',
+    ),
+    'hidden': (
+        'Hidden imports (comma-separated)',
+        'Hidden imports (คั่นด้วยจุลภาค)',
+        'Hidden imports (ၶႅၼ်ႈလူၺ်ႈၵွမ်ႇမႃႇ)',
+    ),
+    'folder': (
+        'Release folder to install',
+        'โฟลเดอร์โปรแกรมที่จะติดตั้ง',
+        'ၾူဝ်ႇလ်ႇတိူဝ်ႇပရူဝ်ႇၵရႅမ်ႇ',
+    ),
+    'exe': (
+        'EXE filename in release folder',
+        'ชื่อไฟล์ EXE ในโฟลเดอร์',
+        'ၸိုဝ်ႈၾၢႆႇ EXE',
+    ),
+
+    # Installer and icon actions
+    'makeinstaller': (
+        'Build installer',
+        'สร้างตัวติดตั้ง',
+        'သၢင်ႈတူဝ်ဢိၼ်ႇသတေႃး',
+    ),
+    'convert': (
+        'Convert icon',
+        'แปลงไอคอน',
+        'ပိၼ်ႇ icon',
+    ),
+
+    # Java and Python tools
+    'check': (
+        'Check Java',
+        'ตรวจ Java',
+        'ၵူတ်ႇထတ်း Java',
+    ),
+    'installjava': (
+        'Download / install Java',
+        'ดาวน์โหลด / ติดตั้ง Java',
+        'လူတ်ႇ / ဢိၼ်ႇသတေႃး Java',
+    ),
+    'runinstaller': (
+        'Run downloaded installer',
+        'เปิดไฟล์ติดตั้งที่ดาวน์โหลดแล้ว',
+        'ပိုတ်ႇၾၢႆႇဢိၼ်ႇသတေႃး',
+    ),
+    'installpython': (
+        'Install PyInstaller in selected Python',
+        'ติดตั้ง PyInstaller ใน Python ที่เลือก',
+        'ဢိၼ်ႇသတေႃး PyInstaller ၼႂ်း Python',
+    ),
+    'save': (
+        'Save tool settings',
+        'บันทึกเครื่องมือ',
+        'သိမ်းၶိူင်ႈမိုဝ်း',
+    ),
+
+    # Build controls and status
+    'stop': (
+        'Stop',
+        'หยุด',
+        'ၵိုတ်း',
+    ),
+    'open': (
+        'Open output folder',
+        'เปิดโฟลเดอร์ผลลัพธ์',
+        'ပိုတ်ႇၾူဝ်ႇလ်ႇတိူဝ်ႇဢွၵ်ႇ',
+    ),
+    'ready': (
+        'Ready • Build on Windows',
+        'พร้อมใช้งาน • สร้าง EXE บน Windows',
+        'တူဝ်ႈတၼ်း • သၢင်ႈ EXE ၼိူဝ် Windows',
+    ),
 }

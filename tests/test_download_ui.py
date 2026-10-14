@@ -3,9 +3,15 @@ from pathlib import Path
 from unittest.mock import patch
 os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QSettings
-import main,download_ui as ui
+try:
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtCore import QSettings
+    import main,download_ui as ui
+    QT_AVAILABLE = True
+except ImportError:
+    QT_AVAILABLE = False
+
+@unittest.skipUnless(QT_AVAILABLE, 'Install PySide6 for GUI tests')
 class DownloadUITests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -17,7 +23,7 @@ class DownloadUITests(unittest.TestCase):
         QSettings('Khurkham','ExeBuilderStudio').clear();self.window=main.Window();self.card=self.window.tool_cards[0];self.window.lang.setCurrentIndex(1)
     def tearDown(self):self.window.busy=False;self.window.close();self.app.processEvents()
     def test_all_tools_and_about_have_check_download_update_install(self):
-        self.assertEqual([c.key for c in self.window.tool_cards],['java','launch4j','inno','python','pyinstaller','sdk','studio'])
+        self.assertEqual([c.key for c in self.window.tool_cards],['java','launch4j','inno','python','pyinstaller','studio'])
         for c in self.window.tool_cards:self.assertEqual(set(c.buttons),{'check','download','update','install'})
     def test_missing_status_not_success(self):
         self.card.complete({'detected':{'found':False,'version':'','path':''},'installed':True})
