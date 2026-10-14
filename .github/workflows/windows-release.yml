@@ -3,7 +3,15 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [tool_downloads.py, .github/workflows/windows-release.yml, 'assets/**', 'tests/**']
+    paths:
+      - 'tool_downloads.py'
+      - 'app/**'
+      - 'installer/**'
+      - 'assets/**'
+      - 'tests/**'
+      - 'main.py'
+      - 'Build_Studio.ps1'
+      - 'requirements.txt'
 permissions:
   contents: write
 concurrency:
