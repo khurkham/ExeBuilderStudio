@@ -1,0 +1,58 @@
+name: Windows installer release (manual only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Build Windows installer
+        shell: pwsh
+        run: |
+          python -m venv .venv
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot create environment' }
+          ./Build_Studio.ps1 -CreateInstaller
+
+      - name: Test application
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          ./.venv/Scripts/python.exe -m unittest discover -s tests -q
+          if ($LASTEXITCODE -ne 0) { throw 'Tests failed' }
+
+      - name: Publish Windows installer to GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = & ./.venv/Scripts/python.exe -c "from app.services.tool_downloads import APP_VERSION; print(APP_VERSION)"
+          $tag = "v$version"
+          $setup = 'installer_output/ExeBuilderStudio_Setup.exe'
+          if (!(Test-Path $setup)) { throw "Installer not found: $setup" }
+          $hash = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  ExeBuilderStudio_Setup.exe" | Set-Content installer_output/SHA256SUMS-Windows.txt -Encoding ascii
+          gh release view $tag --repo $env:GITHUB_REPOSITORY 2>$null
+          $exists = $LASTEXITCODE -eq 0
+          if ($exists) {
+            gh release upload $tag $setup installer_output/SHA256SUMS-Windows.txt --clobber --repo $env:GITHUB_REPOSITORY
+            if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }
+          } else {
+            gh release create $tag $setup installer_output/SHA256SUMS-Windows.txt --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "ExeBuilderStudio $version" --notes "Version $version. Publish the matching macOS DMG by manually running the temporary macOS release workflow." --latest
+            if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }
+          }
