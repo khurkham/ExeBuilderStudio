@@ -55,6 +55,21 @@ bash macos/build_macos_distribution.sh
 
 ข้อสำคัญ: การ Bundle แอป ExeBuilderStudio ไม่ได้ Bundle toolchain สำหรับทุกโปรเจกต์ของผู้ใช้โดยอัตโนมัติ การสร้าง Java JAR ต้องใช้ JDK 17+ ที่มี `jpackage` (เว้นแต่ Bundle ไว้) ส่วนการสร้าง Python project ยังต้องมี Python 3 บน Mac และอาจต้องใช้อินเทอร์เน็ตเพื่อติดตั้ง dependencies ของโปรเจกต์เป้าหมาย
 
+## GitHub Releases และการอัปเดตในแอป macOS
+
+ควรเผยแพร่ Windows และ macOS ด้วยเลขเวอร์ชันเดียวกันใน GitHub Release เดียวกัน โดย Windows ใช้ `ExeBuilderStudio_Setup.exe` ส่วนตัวอัปเดต macOS จะค้นหาไฟล์ DMG ที่มีชื่อระบุ `macOS` และสถาปัตยกรรมตรงกับเครื่อง เช่น `ExeBuilderStudio-1.1-macOS-arm64.dmg` หรือ `ExeBuilderStudio-1.1-macOS-x86_64.dmg`
+
+บน macOS ให้เปิดแท็บ **About → Check for Updates** แอปจะตรวจสอบ GitHub Release รุ่นเสถียรล่าสุด ดาวน์โหลด DMG ผ่าน HTTPS และตรวจสอบ SHA-256 เทียบกับข้อมูลไฟล์ใน GitHub ก่อนเปิด DMG ให้ติดตั้ง เนื่องจาก Build ปัจจุบันยังไม่ได้ลงนามโค้ดและ Notarize จึงยังไม่สามารถแทนที่แอปที่กำลังเปิดอยู่โดยอัตโนมัติได้ ให้ปิด ExeBuilderStudio แล้วลากแอปใหม่ไปยัง Applications และเลือก Replace เมื่อระบบถาม
+
+### ขั้นตอนเผยแพร่รุ่นใหม่
+
+1. เปลี่ยน `APP_VERSION` และ `BUILD_REVISION` ใน `app/services/tool_downloads.py` แล้วทดสอบ Build Windows
+2. เปิด GitHub Actions แล้วรัน **Windows installer release (manual only)** เพื่อเผยแพร่ Setup EXE และสร้าง GitHub Release ตามเวอร์ชันหากยังไม่มี
+3. รัน **Temporary macOS DMG release (run once)** เพื่อ Build DMG บน macOS อัปโหลด DMG และไฟล์ SHA-256 ไปยัง Release เดียวกัน จากนั้น Workflow macOS จะลบตัวเองหลังเผยแพร่สำเร็จ
+4. ตรวจสอบว่า Release เดียวกันมีไฟล์ติดตั้งทั้ง Windows และ macOS
+
+Workflow ของ GitHub Actions ทำงานเมื่อสั่งด้วยตนเองเท่านั้น การ Push โค้ดไม่ทำให้เกิดการ Build อัตโนมัติ Workflow macOS ถูกออกแบบให้ใช้ชั่วคราวและลบตัวเองหลังเผยแพร่ ส่วน Workflow Windows ยังคงอยู่เพื่อใช้เผยแพร่ด้วยตนเอง โปรดตรวจสอบหน้า Billing ของบัญชี GitHub ก่อนใช้งาน เนื่องจากโควตาอาจขึ้นอยู่กับแผนและการตั้งค่าบัญชี
+
 ## การตรวจสอบ
 
 ควรทดสอบการ Build จริงบนระบบปฏิบัติการเป้าหมายของแต่ละชนิด เนื่องจากเครื่องมือแพ็กเกจเป็นเครื่องมือเฉพาะระบบปฏิบัติการ dependencies เฉพาะโปรเจกต์หรือการโหลดทรัพยากรแบบไดนามิกอาจต้องปรับแต่งเพิ่มเติม
