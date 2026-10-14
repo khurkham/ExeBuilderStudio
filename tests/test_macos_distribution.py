@@ -34,9 +34,11 @@ class MacDistributionTests(unittest.TestCase):
             with patch.object(sys, "platform", "darwin"), \
                  patch.object(sys, "executable", str(executable)), \
                  patch.object(sys, "frozen", True, create=True):
-                self.assertEqual(bundled_jdk_home(), jdk)
+                # Windows runners may resolve TEMP paths to an 8.3 short path;
+                # compare canonical paths instead of their different spellings.
+                self.assertEqual(bundled_jdk_home().resolve(), jdk.resolve())
                 matches = discover_jdk_homes()
-                self.assertTrue(any(path == str(jdk) for _, path in matches))
+                self.assertTrue(any(Path(path).resolve() == jdk.resolve() for _, path in matches))
 
     def test_bundled_jdk_not_assumed_when_running_from_source(self):
         with patch.object(sys, "platform", "darwin"), \
