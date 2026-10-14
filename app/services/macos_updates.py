@@ -174,15 +174,16 @@ class MacUpdateCard(QWidget):
         self.release = None
         self.setObjectName("MacUpdateCard")
         layout = QVBoxLayout(self)
-        title = QLabel("macOS Software Updates")
-        title.setStyleSheet("font-size: 16px; font-weight: 600;")
-        layout.addWidget(title)
+        self.language = 0
+        self.title = QLabel()
+        self.title.setStyleSheet("font-size: 16px; font-weight: 600;")
+        layout.addWidget(self.title)
         self.status = QLabel("Installed version: " + APP_VERSION)
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
         buttons = QHBoxLayout()
-        self.check_button = QPushButton("Check for Updates")
-        self.download_button = QPushButton("Download and Open DMG")
+        self.check_button = QPushButton()
+        self.download_button = QPushButton()
         self.download_button.setEnabled(False)
         self.check_button.clicked.connect(lambda: self.start("check"))
         self.download_button.clicked.connect(lambda: self.start("download"))
@@ -194,13 +195,27 @@ class MacUpdateCard(QWidget):
         self.progress_bar.setValue(0)
         self.progress_bar.hide()
         layout.addWidget(self.progress_bar)
-        self.note = QLabel(
-            "Updates are downloaded from the official GitHub Release and SHA-256 verified. "
-            "Because this build is not code-signed/notarized, the updater opens the DMG for you; "
-            "quit the app and drag the new app into Applications to replace the old copy."
-        )
+        self.note = QLabel()
         self.note.setWordWrap(True)
         layout.addWidget(self.note)
+        self.set_language(0)
+
+    def set_language(self, index):
+        self.language = max(0, min(2, int(index)))
+        labels = {
+            "title": ("macOS Software Updates", "อัปเดตโปรแกรม macOS", "macOS ပရူဝ်ႇၵရႅမ်ႇဢပ်ႉတဵတ်ႉ"),
+            "check": ("Check for Updates", "ตรวจสอบการอัปเดต", "ၵူတ်ႇဝႃးသျိၼ်းမႂ်ႇ"),
+            "download": ("Download and Open DMG", "ดาวน์โหลดและเปิดไฟล์ DMG", "လူတ်ႇလႄႈပိုတ်ႇၾၢႆႇ DMG"),
+            "note": (
+                "Updates are downloaded from GitHub Releases and SHA-256 verified. This build is not code-signed/notarized, so the DMG opens for manual replacement: quit the app and drag the new app into Applications.",
+                "ดาวน์โหลดอัปเดตจาก GitHub Releases และตรวจสอบ SHA-256 แล้ว รุ่นนี้ยังไม่ได้ลงนาม/Notarize จึงเปิด DMG ให้ติดตั้งด้วยตนเอง: ปิดโปรแกรมแล้วลากแอปใหม่ไปยัง Applications เพื่อแทนที่รุ่นเดิม",
+                "Update တေတေလူတ်ႇတီႈ GitHub Releases လႄႈၵူတ်ႇ SHA-256။ Build ၼႆႉဢမ်ႇပႆႇ Sign/Notarize၊ ၵွပ်ႈၼၼ်ပိုတ်ႇ DMG တႃႇတိတ်းတင်ႈမိုဝ်း: ပိၵ်ႉ app လႄႈလၢၵ်ႈ app မႂ်ႇၶဝ်ႈ Applications"
+            )
+        }
+        self.title.setText(labels["title"][self.language])
+        self.check_button.setText(labels["check"][self.language])
+        self.download_button.setText(labels["download"][self.language])
+        self.note.setText(labels["note"][self.language])
 
     def start(self, action):
         if self.worker and self.worker.isRunning():
