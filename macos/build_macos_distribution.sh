@@ -34,6 +34,7 @@ if [[ ! -x "$VENV/bin/python" ]]; then
 fi
 "$VENV/bin/python" -m pip install --upgrade pip
 "$VENV/bin/python" -m pip install -r "$ROOT/requirements.txt"
+VERSION="$("$VENV/bin/python" -c "from app.services.tool_downloads import APP_VERSION; print(APP_VERSION)")"
 
 # Create a native ICNS icon from the source logo using the project's Pillow helper.
 "$VENV/bin/python" - "$ROOT" <<'PY'
@@ -98,7 +99,7 @@ STAGE="$BUILD_ROOT/stage"
 rm -rf "$STAGE"
 mkdir -p "$STAGE"
 /usr/bin/ditto "$APP" "$STAGE/ExeBuilderStudio.app"
-DMG="$RELEASE/ExeBuilderStudio-1.1-macOS-$ARCH.dmg"
+DMG="$RELEASE/ExeBuilderStudio-$VERSION-macOS-$ARCH.dmg"
 rm -f "$DMG"
 
 # Prefer create-dmg for a polished drag-and-drop window when it is installed.
@@ -106,7 +107,7 @@ rm -f "$DMG"
 if command -v create-dmg >/dev/null 2>&1; then
   echo "Creating a styled DMG with create-dmg..."
   create-dmg \
-    --volname "ExeBuilderStudio 1.1" \
+    --volname "ExeBuilderStudio $VERSION" \
     --window-size 640 420 \
     --icon-size 96 \
     --icon "ExeBuilderStudio.app" 170 190 \
