@@ -9,6 +9,7 @@ from PySide6.QtGui import QFont, QFontDatabase, QDesktopServices, QPixmap, QIcon
 from PySide6.QtWidgets import (QApplication,QMainWindow,QWidget,QVBoxLayout,QHBoxLayout,QFormLayout,QLineEdit,QPushButton,QComboBox,QTabWidget,QPlainTextEdit,QFileDialog,QLabel,QMessageBox,QScrollArea,QLayout,QProgressBar)
 from backend import *
 from app.services.macos_builder import create_macos_build_kit
+from app.services.macos_updates import MacUpdateCard
 from app.services.windows_native_builder import build_windows_installer, resolve_jdk_home
 from app.services.jdk_manager import discover_jdk_homes, validate_jdk_home
 from download_ui import add_tool_card, add_about_updater, translate_downloads
@@ -247,9 +248,9 @@ class Window(QMainWindow):
     else:
       for key in ['java','inno','python','pyinstaller']:
         add_tool_card(self,key,self.pages['tools'])
-    about=QWidget(); box=QVBoxLayout(about); logo=QLabel(); logo.setPixmap(QPixmap(str(resource('logo.png'))).scaled(140,140,Qt.KeepAspectRatio,Qt.SmoothTransformation)); box.addWidget(logo); self.about_text=QLabel(); self.about_text.setWordWrap(True); box.addWidget(self.about_text); self.mac_update_note=None
+    about=QWidget(); box=QVBoxLayout(about); logo=QLabel(); logo.setPixmap(QPixmap(str(resource('logo.png'))).scaled(140,140,Qt.KeepAspectRatio,Qt.SmoothTransformation)); box.addWidget(logo); self.about_text=QLabel(); self.about_text.setWordWrap(True); box.addWidget(self.about_text); self.mac_updater=None
     if sys.platform == 'darwin':
-      self.mac_update_note=QLabel(); self.mac_update_note.setWordWrap(True); box.addWidget(self.mac_update_note)
+      self.mac_updater=MacUpdateCard(); box.addWidget(self.mac_updater)
     else:
       add_about_updater(self,box)
     box.addStretch(); about_scroll=QScrollArea(); about_scroll.setWidgetResizable(True); about_scroll.setWidget(about); self.about_index=self.tabs.addTab(about_scroll,'About')
@@ -413,12 +414,8 @@ class Window(QMainWindow):
         'รุ่น macOS รวม Runtime ของตัวโปรแกรมไว้แล้ว การสร้าง Java ต้องมี Full JDK 17+ ที่มี jpackage ส่วนการสร้างโปรเจกต์ Python ต้องมี Python 3 บน Mac และอาจต้องใช้อินเทอร์เน็ตเพื่อติดตั้ง Dependencies',
         'macOS ဝႃးသျိၼ်းၼႆႉ Bundle runtime ပရူဝ်ႇၵရမ်ႇဝႆႉ။ Java တေလူဝ်ႇ Full JDK 17+ ဢၼ်မီး jpackage။ Python project တေလူဝ်ႇ Python 3 လႄႈ ၸၢင်ႈလူဝ်ႇ Internet တႃႇတိတ်းတင်ႈ Dependencies'
       ][i])
-    if self.mac_update_note is not None:
-      self.mac_update_note.setText([
-        'macOS updates are distributed as a separate DMG. The Windows EXE updater is disabled in this app.',
-        'เวอร์ชัน macOS แจกจ่ายเป็นไฟล์ DMG แยกต่างหาก จึงปิดตัวอัปเดต EXE ของ Windows ในแอปนี้',
-        'macOS ဝႃးသျိၼ်းမႂ်ႇ တေၸႅၵ်ႇပၼ်ၼႂ်းၾၢႆႇ DMG။ ပိၵ်ႉ Windows EXE updater ဝႆႉ'
-      ][i])
+    if self.mac_updater is not None:
+      self.mac_updater.set_language(i)
  # Persist normal UI settings and clear obsolete settings from older versions.
  def save_settings(self):
     for key,w in self.fields.items():
