@@ -126,7 +126,9 @@ def download_dmg(release: dict, progress) -> Path:
             raise ValueError("The DMG download is incomplete. Please try again.")
         if digest.hexdigest().lower() != release["sha256"]:
             raise ValueError("SHA-256 verification failed. The downloaded DMG was rejected.")
+        # UDIF DMG images store the "koly" trailer signature 512 bytes from EOF.
         with partial.open("rb") as stream:
+            stream.seek(-512, os.SEEK_END)
             if stream.read(4) != b"koly":
                 raise ValueError("The downloaded file does not look like a valid macOS disk image.")
         partial.replace(target)
