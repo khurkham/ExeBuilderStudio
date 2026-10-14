@@ -72,10 +72,13 @@ class DownloadTests(unittest.TestCase):
     def test_installed_compiler_survives_version_metadata_failure(self):
         for key,name in [('inno','ISCC.exe'),('launch4j','launch4jc.exe')]:
             path=self.root/name;path.write_bytes(b'MZtest')
-            with patch.object(td,'executable_version',side_effect=UnicodeDecodeError('utf-8',b'\xff',0,1,'invalid')):
+            with patch.object(td,'inno_setup_version',return_value='7.1.0'), \
+                 patch.object(td,'executable_version',side_effect=UnicodeDecodeError('utf-8',b'\\xff',0,1,'invalid')):
                 result=td.detect_tool(key,str(path))
             self.assertTrue(result['found']);self.assertEqual(result['path'],str(path))
-            self.assertEqual(result['version'],'')
+            # Inno Setup uses its registered version as a reliable fallback.
+            # Launch4j reports an empty version when executable metadata is unreadable.
+            self.assertEqual(result['version'], '7.1.0' if key == 'inno' else '')
     def test_version_equivalence_and_release_version(self):
         self.assertEqual(td.APP_VERSION,'1.1')
         self.assertEqual(td.version_key('1.0'),td.version_key('1.0.0'))

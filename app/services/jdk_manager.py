@@ -11,7 +11,8 @@ from pathlib import Path
 
 def _jdk_executable(home: Path) -> Path:
     """Return the platform-specific jpackage path inside a JDK home."""
-    name = "jpackage.exe" if os.name == "nt" else "jpackage"
+    # sys.platform is patchable in cross-platform tests and reflects the target OS.
+    name = "jpackage.exe" if sys.platform == "win32" else "jpackage"
     return home / "bin" / name
 
 
