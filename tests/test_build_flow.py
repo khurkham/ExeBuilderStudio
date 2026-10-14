@@ -37,8 +37,10 @@ class BuildFlowTests(unittest.TestCase):
         self.window.start=lambda exe,args,cwd=None,callback=None,payload=None,label=None:self.calls.append({
             'exe':exe,'args':args,'cwd':cwd,'callback':callback,'payload':payload,'label':label})
         self.tool=self.root/'tool.exe'; self.tool.write_bytes(b'MZ')
+        # Only seed fields that exist in the current UI; Launch4j was removed.
         for key in ['tools/launch4jc','tools/ISCC','tools/Python interpreter']:
-            self.window.fields[key].setText(str(self.tool))
+            if key in self.window.fields:
+                self.window.fields[key].setText(str(self.tool))
 
     def tearDown(self):
         self.window.busy=False; self.window.close(); self.window.deleteLater()
