@@ -7,9 +7,8 @@ if (!(Test-Path '.venv\Scripts\python.exe')) {
 }
 & '.\.venv\Scripts\python.exe' -m pip install -r requirements.txt
 if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed' }
-& '.\.venv\Scripts\python.exe' -m PyInstaller --noconfirm --clean --windowed --onedir --name ExeBuilderStudio --icon assets/app.ico --add-data 'assets:assets' --add-data 'Ensure-Certificate.ps1:.' --add-data 'SigningOperations.ps1:.' main.py
+& '.\.venv\Scripts\python.exe' -m PyInstaller --noconfirm --clean --windowed --onedir --name ExeBuilderStudio --icon assets/app.ico --add-data 'assets:assets' main.py
 if ($LASTEXITCODE -ne 0) { throw 'Build failed' }
-Copy-Item -LiteralPath '.\Ensure-Certificate.ps1' -Destination '.\dist\ExeBuilderStudio\Ensure-Certificate.ps1' -Force
 Write-Host 'Ready: dist\ExeBuilderStudio\ExeBuilderStudio.exe'
 if ($CreateInstaller) {
     if (-not $ISCC) {

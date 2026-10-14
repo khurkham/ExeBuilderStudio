@@ -7,3 +7,14 @@ installer_output/
 *.spec
 *.pfx
 *.p12
+.pytest_cache/
+.idea/
+*.log
+.DS_Store
+Thumbs.db
+
+# Native macOS release artifacts and local packaging environment
+.venv-macos-release/
+macos_release/
+assets/app.icns
+build/macos-distribution/

@@ -1,77 +1,64 @@
-# EXE Builder Studio 1.0
-รุ่นปรับปรุงเพิ่ม SignTool และใบรับรองอัตโนมัติ: อ่าน README_SIGNING_TH.md
-โปรเจกต์ Python Desktop สำหรับ Windows 10/11 เปิดแก้ด้วย IntelliJ IDEA ได้
-มีเมนู English / ไทย / တႆး และฝังฟอนต์ TH Sarabun New กับ A J Kunheing E-T-M 05 ที่แนบมา
+# EXE Builder Studio 1.1
 
-## เริ่มใช้งาน
+โปรแกรม Desktop สำหรับสร้างตัวติดตั้ง Windows และ macOS รองรับเมนู English / ไทย / တႆး
+
+## หลักการสร้างตัวติดตั้ง: สร้างบนเครื่องเป้าหมายเท่านั้น ไม่มี Cloud Build
+
+โปรแกรมจะสร้างตัวติดตั้งเฉพาะบนระบบปฏิบัติการที่ตรงกับเป้าหมายเท่านั้น **ไม่มีการอัปโหลดโปรเจกต์ไปยัง Cloud Build และไม่ต้องใช้ GitHub Repository หรือ Token**
+
+| เมนู | ระบบที่สร้างได้ | เครื่องมือหลัก | ผลลัพธ์ |
+|---|---|---|---|
+| Java JAR → Setup Windows | Windows เท่านั้น | JDK 17+ ที่มี `jpackage` และ Inno Setup 6/7 (ไม่ต้องใช้ WiX หรือ PowerShell) | `*_Setup.exe` |
+| Python → Setup Windows | Windows เท่านั้น | Python 3, PyInstaller และ Inno Setup 6/7 | `*_Setup.exe` |
+| Java JAR → Setup macOS | Mac เท่านั้น | JDK 17+ ที่มี `jpackage` | `*_Setup.dmg` |
+| Python → Setup macOS | Mac เท่านั้น | Python 3, PyInstaller และ `create-dmg` (ถ้าติดตั้งไว้) หรือ `hdiutil` ที่มากับ macOS | `*_Setup.dmg` |
+
+หากเปิดโปรแกรมบน Mac แล้วกดสร้าง `.exe` โปรแกรมจะแสดงหน้าต่างเตือนให้ไปสร้างบนเครื่อง Windows และหยุดการ Build หากเปิดบน Windows แล้วกดสร้าง `.dmg` โปรแกรมจะแสดงหน้าต่างเตือนให้ไปสร้างบนเครื่อง Mac และหยุดการ Build ก่อนเริ่มแพ็กเกจ
+
+เลือกไฟล์ JAR หรือไฟล์/โฟลเดอร์โปรเจกต์ Python, Output folder, ชื่อแอป และโลโก้ได้จากแท็บ Build ที่ตรงกับเป้าหมาย โปรเจกต์ Python จะถูกแพ็กเกจแบบโฟลเดอร์ แล้วนำไปสร้างเป็นตัวติดตั้งขั้นสุดท้าย หากมีไฟล์ Setup ชื่อเดียวกัน โปรแกรมจะถามก่อนเขียนทับ และจะแทนที่ไฟล์เดิมเมื่อ Build ใหม่สำเร็จเท่านั้น
+
+### เลือกเวอร์ชัน JDK สำหรับ Build
+
+ในแท็บ **Tools / Java** ใช้ช่อง **JDK ที่ใช้สร้างตัวติดตั้ง Java** เพื่อเลือก JDK ที่ติดตั้งอยู่ (เช่น 17, 21 หรือ 25) ได้โดยตรง กด **ค้นหา JDK อีกครั้ง** เพื่อสแกนเครื่อง หรือ **เลือกโฟลเดอร์ JDK…** เพื่อระบุโฟลเดอร์เอง ต้องเลือกโฟลเดอร์รากของ Full JDK ที่มี `bin/jpackage.exe` บน Windows หรือ `bin/jpackage` บน Mac และต้องเป็น JDK 17 ขึ้นไป หากเลือก Auto-detect โปรแกรมจะค้นหา JDK ให้เอง
+
+### หากขึ้นข้อความว่าไม่พบ JDK หรือ jpackage
+
+การเห็น `java version 25.0.3` ไม่ได้ยืนยันว่ามี JDK ครบชุด เพราะ `java.exe` ใน `Common Files\Oracle\Java\javapath` อาจเป็นเพียงตัวเรียก Java Runtime โปรแกรมเวอร์ชันนี้จะค้นหา JDK ในตำแหน่งติดตั้งที่พบบ่อยให้อัตโนมัติ หากยังไม่พบ `jpackage.exe` ให้ติดตั้ง **Full JDK 17 หรือใหม่กว่า** (เช่น Temurin JDK) และตั้ง `JAVA_HOME` ให้ชี้ไปยังโฟลเดอร์รากของ JDK เช่น `C:\Program Files\Eclipse Adoptium\jdk-21...` ไม่ใช่โฟลเดอร์ `bin` และไม่ใช่ `javapath` จากนั้นเปิดโปรแกรมใหม่
+
+โปรแกรมกรองโฟลเดอร์พัฒนา เช่น `.venv`, `venv`, `.idea`, `.git`, `tests`, cache, `build` และ `dist` ออกจากแพ็กเกจ Python รวมทั้งไฟล์ลับ เช่น `.env*`, private key, `.pfx` และ `.p12`
+
+## เริ่มใช้งานบน Windows
+
 1. ติดตั้ง Python 3.11 หรือ 3.12 แบบ 64-bit จาก https://www.python.org/downloads/windows/
-2. แตก ZIP แล้วเปิด Start.bat ครั้งแรกต้องต่ออินเทอร์เน็ตเพื่อติดตั้ง dependencies
-3. IntelliJ IDEA: เปิดโฟลเดอร์โปรเจกต์ ตั้ง Python interpreter เป็น .venv\Scripts\python.exe แล้วเปิด main.py (ต้องมี Python plugin ที่รองรับในรุ่น IDE ของคุณ)
+2. แตก ZIP แล้วเปิด `Start.bat` โปรแกรมจะสร้าง environment และติดตั้ง dependencies ตาม `requirements.txt`
+3. หากพัฒนาด้วย IntelliJ IDEA ให้เลือก Python interpreter เป็น `.venv\Scripts\python.exe`
 
-## เครื่องมือ: ดาวน์โหลดภายในโปรแกรม
-อ่าน UPDATE_DOWNLOADS_TH.md สำหรับรุ่นนี้
-เครื่องมือแต่ละตัวมีปุ่ม ตรวจสอบโปรแกรม / ดาวน์โหลด / อัปเดต / ติดตั้งไฟล์ที่ดาวน์โหลด
-- ตรวจสอบ: ตรวจตำแหน่งและเวอร์ชัน หากไม่พบจะแสดง “กรุณาดาวน์โหลดโปรแกรม”
-- ดาวน์โหลด: ดึงไฟล์จากแหล่งทางการ พร้อมแถบความคืบหน้า ไม่เปิดเว็บเบราว์เซอร์
-- ติดตั้ง: ใช้ไฟล์ที่ดาวน์โหลดไว้ Java และ Launch4j แตก ZIP ลงโฟลเดอร์เครื่องมือของแอป ส่วน Inno Setup, Python และ SDK เปิดหน้าติดตั้งของผู้ผลิต
-- อัปเดต: ตรวจรุ่นล่าสุด ดาวน์โหลด และเปิดการติดตั้งเมื่อมีรุ่นใหม่ หลังติดตั้งจะตรวจเครื่องมืออีกครั้ง
-- PyInstaller: ดาวน์โหลดแพ็กเกจสำหรับ Python ที่เลือก แล้วติดตั้งจากแพ็กเกจนั้น ไม่ติดตั้ง dependencies ของโปรเจกต์เป้าหมายให้
-เลือก Java รุ่นหลักให้ตรงกับโปรเจกต์ ปุ่มอัปเดต Java อัปเดตภายในรุ่นหลักที่เลือก
-โฟลเดอร์ดาวน์โหลด: %LOCALAPPDATA%\ExeBuilderStudio\downloads
-โฟลเดอร์เครื่องมือแบบ ZIP: %LOCALAPPDATA%\ExeBuilderStudio\tools
+## Build ตัวโปรแกรม ExeBuilderStudio เอง
 
-## Java JAR → EXE
-เลือก executable JAR ที่มี Main-Class ใน manifest แล้วเลือกโฟลเดอร์ผลลัพธ์ ชื่อภาษาอังกฤษ และ ICO (ไม่บังคับ)
-ตั้ง Java ขั้นต่ำให้ตรงกับรุ่นที่ใช้ compile เช่น 17, 21, 25; ไม่ควรใช้ค่า 1.8.0 กับโปรแกรมที่ compile ด้วย Java รุ่นใหม่
-เลือกโฟลเดอร์ Java ที่มี bin\java.exe หากต้องการรวม runtime ไปด้วย คัดลอกทั้ง runtime และตรวจสอบสิทธิ์การแจกจ่ายของ distribution นั้น
-โปรแกรมสร้าง launch4j.xml และ EXE ที่ฝัง JAR อยู่ภายใน (dontWrapJar=false)
-หากมี lib อยู่ข้าง JAR จะคัดลอกไปด้วย Dependencies นอก lib หรือข้อมูล/รูป/เสียงต้องคัดลอกเองเข้าโฟลเดอร์ release
-JAR ที่ไม่มี Main-Class ต้องแก้ manifest หรือสร้าง executable JAR ก่อนใช้งาน
-เมื่อรวม Java ให้แจกทั้งโฟลเดอร์ release หรือใช้ Inno Setup ไม่ใช่เฉพาะ EXE
-ไม่รวม runtime: เครื่องปลายทางต้องมี Java ที่รองรับ
-ไม่รับรอง Windows XP/7 สำหรับเครื่องมือและ runtime รุ่นปัจจุบัน
+บน Windows เปิด PowerShell ในโฟลเดอร์โปรเจกต์ แล้วรัน:
 
-## Python → EXE
-เลือกไฟล์ entry point เช่น main.py แล้วเลือก python.exe ที่รันโปรเจกต์นั้นได้
-เลือก Onefile สำหรับ EXE เดียว หรือยกเลิกเพื่อส่งออกแบบ Onedir (เหมาะกับโปรแกรมใหญ่)
-เลือก Show console หากเป็นโปรแกรม command line
-โฟลเดอร์ข้อมูลเพิ่มเติมจะถูกใส่ใน bundle ด้วยชื่อโฟลเดอร์เดิม เช่น assets → assets
-ใส่ hidden imports คั่นด้วย comma เมื่อโปรแกรมโหลดโมดูลแบบ dynamic
-ผลลัพธ์อยู่ output\dist; หากเป็น Onedir ต้องแจกโฟลเดอร์ทั้งหมด
-ทรัพยากรใน bundle ต้องถูกอ้างอิงจาก __file__ หรือ sys._MEIPASS ตามวิธีของ PyInstaller ไม่ควรเขียนข้อมูลถาวรกลับเข้า bundle
-ทดสอบบน Windows ที่ไม่มี Python ก่อนแจกจริง
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Build_Studio.ps1 -CreateInstaller
+```
 
-## ตัวติดตั้ง Inno Setup
-เลือกโฟลเดอร์ release ที่มีเฉพาะไฟล์พร้อมแจก อย่าเลือกทั้งโฟลเดอร์ source code หรือ virtual environment
-ระบุชื่อ EXE ในโฟลเดอร์ รุ่น 1.0 ผู้พัฒนา และโฟลเดอร์ผลลัพธ์ที่อยู่นอก release
-ได้ไฟล์ .iss และ AppName_Setup.exe รองรับ shortcut Start Menu และ desktop แบบเลือกได้
-ติดตั้งระดับผู้ใช้ใน LOCALAPPDATA\Programs โดยไม่ต้องบังคับสิทธิ์ admin
-ชื่อโปรแกรมและผู้พัฒนาเดิมทำให้ AppId เดิมสำหรับอัปเดตเวอร์ชัน
-ไอคอน shortcut ใช้ไอคอนที่ฝังใน EXE; ICO ในแท็บ installer ใช้สำหรับตัว Setup
+ต้องมี Python และ Inno Setup บนเครื่องที่ใช้ Build โปรแกรมจะสร้าง `ExeBuilderStudio_Setup.exe` ในโฟลเดอร์ `installer_output`
 
-## Logo → ICO
-รองรับ PNG/JPG/JPEG/BMP/WebP/ICO คงสัดส่วนภาพ ไม่ตัดขอบ เติมพื้นที่โปร่งใสเป็นสี่เหลี่ยม
-ICO รวม 16, 24, 32, 48, 64, 128, 256 px; JPG ไม่มี alpha ดั้งเดิมจึงไม่สามารถลบพื้นหลังให้อัตโนมัติ
+## สร้างแอป ExeBuilderStudio สำหรับแจกจ่ายบน macOS
 
-## สร้าง EXE ของ EXE Builder Studio เอง
-เปิด PowerShell ในโฟลเดอร์ แล้วรัน:
-  powershell -ExecutionPolicy Bypass -File .\Build_Studio.ps1
-ได้ dist\ExeBuilderStudio\ExeBuilderStudio.exe แล้วใช้แท็บตัวติดตั้งเลือกโฟลเดอร์นี้เพื่อสร้าง ExeBuilderStudio_Setup.exe
-ต้องสร้างบน Windows ไม่สามารถใช้ build ใน Linux นี้แทนไฟล์ Windows ที่ผ่านการทดสอบจริงได้
-โปรแกรมมี Log ผลคำสั่ง ปุ่ม Stop และเปิดโฟลเดอร์ผลลัพธ์
-Stop อาจเหลือไฟล์ชั่วคราว ควรเลือก output ใหม่ก่อนลองอีกครั้ง
-ภาษาไทใหญ่ใช้ Unicode; หากข้อความต้นฉบับเป็น legacy encoding ต้องแปลง encoding ก่อน ไม่สามารถแก้เครื่องหมาย ???? ที่สูญเสียข้อมูลไปแล้วด้วยฟอนต์อย่างเดียว
+บนเครื่อง Mac ให้ติดตั้ง Python 3.11 หรือ 3.12 สำหรับขั้นตอนสร้างแพ็กเกจ แล้วรัน:
 
-## โครงสร้าง
-main.py = UI, language, QProcess, settings
-backend.py = validation, Launch4j XML, Inno script, ICO conversion
-assets/fonts = ฟอนต์ที่แนบมา
-requirements.txt / Start.bat / Build_Studio.ps1
+```bash
+bash macos/build_macos_distribution.sh
+```
 
-## ขอบเขตการตรวจสอบ
-ตรวจ syntax Python และทดสอบ backend ด้วยข้อมูลตัวอย่างในสภาพแวดล้อม Linux
-ยังไม่ได้ทดสอบ UI หรือ compile EXE ด้วย Launch4j/PyInstaller/Inno Setup บน Windows
-อ้างอิง:
-https://launch4j.sourceforge.net/docs.html
-https://pyinstaller.org/en/stable/usage.html
-https://jrsoftware.org/ishelp/
+สคริปต์จะใช้ PyInstaller สร้าง `ExeBuilderStudio.app` พร้อม Python runtime, PySide6, Pillow, ฟอนต์และ assets ที่แอปต้องใช้ แล้วสร้างไฟล์ `.dmg` ใน `macos_release/` ตามสถาปัตยกรรมของ Mac ที่ใช้ Build (Apple Silicon หรือ Intel) หากติดตั้ง `create-dmg` ไว้ จะได้หน้าต่าง DMG ที่จัดตำแหน่งไอคอนแอปและทางลัด Applications ให้ หากไม่ได้ติดตั้ง สคริปต์จะใช้ `hdiutil` ที่มากับ macOS แทน สามารถติดตั้งแบบเลือกได้ด้วย `brew install create-dmg` หากต้องการรวม JDK 17+ ที่มีสิทธิ์แจกจ่ายและตรงกับสถาปัตยกรรม ให้กำหนด `EBS_BUNDLE_JDK_HOME` ก่อนรันสคริปต์ ดูรายละเอียดใน `macos/README_TH.md`
+
+ข้อสำคัญ: การ Bundle แอป ExeBuilderStudio ไม่ได้ Bundle toolchain สำหรับทุกโปรเจกต์ของผู้ใช้โดยอัตโนมัติ การสร้าง Java JAR ต้องใช้ JDK 17+ ที่มี `jpackage` (เว้นแต่ Bundle ไว้) ส่วนการสร้าง Python project ยังต้องมี Python 3 บน Mac และอาจต้องใช้อินเทอร์เน็ตเพื่อติดตั้ง dependencies ของโปรเจกต์เป้าหมาย
+
+## การตรวจสอบ
+
+ควรทดสอบการ Build จริงบนระบบปฏิบัติการเป้าหมายของแต่ละชนิด เนื่องจากเครื่องมือแพ็กเกจเป็นเครื่องมือเฉพาะระบบปฏิบัติการ dependencies เฉพาะโปรเจกต์หรือการโหลดทรัพยากรแบบไดนามิกอาจต้องปรับแต่งเพิ่มเติม
+
+### แถบความคืบหน้าการสร้างตัวติดตั้ง
+
+หน้าต่าง Build แสดงแถบความคืบหน้าแนวนอนและชื่อขั้นตอนที่กำลังทำงาน การสร้างตัวติดตั้งทำงานใน worker thread เพื่อให้หน้าต่างยังตอบสนองระหว่างรอ `jpackage`, PyInstaller หรือ Inno Setup เปอร์เซ็นต์เป็นค่าประมาณจากขั้นตอนและข้อความที่เครื่องมือรายงาน ไม่ใช่เปอร์เซ็นต์ที่เครื่องมือ Build รับรองอย่างแม่นยำ

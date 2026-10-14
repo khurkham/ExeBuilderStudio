@@ -52,11 +52,10 @@ class DownloadTests(unittest.TestCase):
     def test_java_release_uses_provider_checksum(self):
         result=[{'version':{'semver':'25.0.1+8'},'binary':{'package':{'name':'jdk.zip','link':'https://github.com/adoptium/jdk.zip','checksum':'a'*64}}}]
         with patch.object(td,'fetch',return_value=result):self.assertEqual(td.resolve_release('java')['sha256'],'a'*64)
-    def test_sdk_stable_installer_and_launch4j_rss(self):
-        sdk='Windows SDK (10.0.28000.2957) <a href="https://go.microsoft.com/fwlink/?linkid=123">Installer</a>'
+    def test_launch4j_rss_release(self):
         rss='<link>https://sourceforge.net/projects/launch4j/files/launch4j-3/3.50/launch4j-3.50-win32.zip/download</link>'
-        with patch.object(td,'fetch',side_effect=[sdk,rss]):
-            self.assertEqual(td.resolve_release('sdk')['version'],'10.0.28000.2957');self.assertEqual(td.resolve_release('launch4j')['url'],'https://downloads.sourceforge.net/project/launch4j/launch4j-3/3.50/launch4j-3.50-win32.zip')
+        with patch.object(td,'fetch',return_value=rss):
+            self.assertEqual(td.resolve_release('launch4j')['url'],'https://downloads.sourceforge.net/project/launch4j/launch4j-3/3.50/launch4j-3.50-win32.zip')
     def test_self_update_requires_repository_and_asset_digest(self):
         with self.assertRaisesRegex(ValueError,'repository'):td.github_release('')
         with patch.object(td,'fetch',return_value={'assets':[{'name':'ExeBuilderStudio_Setup.exe','browser_download_url':'https://github.com/test.exe'}],'tag_name':'v1.1'}):
@@ -78,7 +77,7 @@ class DownloadTests(unittest.TestCase):
             self.assertTrue(result['found']);self.assertEqual(result['path'],str(path))
             self.assertEqual(result['version'],'')
     def test_version_equivalence_and_release_version(self):
-        self.assertEqual(td.APP_VERSION,'1.0.0')
+        self.assertEqual(td.APP_VERSION,'1.1')
         self.assertEqual(td.version_key('1.0'),td.version_key('1.0.0'))
         self.assertGreater(td.version_key('1.0.1'),td.version_key('1.0.0'))
     def test_quoted_configured_compiler_and_wrong_executable(self):
@@ -92,6 +91,12 @@ class DownloadTests(unittest.TestCase):
         p=self.root/'Programs/Inno Setup 7/ISCC.exe';p.parent.mkdir(parents=True);p.write_bytes(b'MZ')
         with patch.dict(os.environ,{'LOCALAPPDATA':str(self.root),'ProgramFiles':str(self.root/'empty64'),'ProgramFiles(x86)':str(self.root/'empty32')}),patch.object(td,'registered_tool_paths',return_value=[]),patch.object(td.shutil,'which',return_value=None),patch.object(td,'executable_version',return_value='7'):
             self.assertEqual(td.detect_tool('inno')['path'],str(p))
+    def test_inno_version_does_not_report_zero_file_metadata(self):
+        path=self.root/'Program Files/Inno Setup 7/ISCC.exe';path.parent.mkdir(parents=True);path.write_bytes(b'MZ')
+        with patch.object(td,'inno_setup_version',return_value='7.1.0'),patch.object(td,'executable_version',return_value='0.0.0.0'):
+            result=td.detect_tool('inno',str(path))
+        self.assertTrue(result['found']);self.assertEqual(result['version'],'7.1.0')
+
     def test_registry_location_and_bounded_python_probe(self):
         p=self.root/'custom/python.exe';p.parent.mkdir();p.write_bytes(b'MZ')
         with patch.object(td,'registered_tool_paths',return_value=[str(p),str(p)]),patch.object(td.shutil,'which',return_value=None),patch.object(td,'run_capture',return_value='3.13.8') as run:
@@ -108,14 +113,6 @@ class DownloadTests(unittest.TestCase):
         with patch.object(td,'run_capture',side_effect=OSError('Cannot execute')):
             result=td.detect_tool('java',str(p))
         self.assertTrue(result['found']);self.assertIn('Cannot execute',result['error'])
-    def test_powershell_discovery_does_not_require_path(self):
-        exe=self.root/'System32/WindowsPowerShell/v1.0/powershell.exe'
-        exe.parent.mkdir(parents=True);exe.write_bytes(b'MZ')
-        with patch.dict(os.environ,{'SystemRoot':str(self.root)}),patch.object(td.shutil,'which',return_value=None) as lookup:
-            self.assertEqual(td.windows_powershell(),str(exe));lookup.assert_not_called()
-    def test_missing_powershell_names_the_missing_file(self):
-        with patch.dict(os.environ,{'SystemRoot':str(self.root)}),patch.object(td.shutil,'which',return_value=None):
-            with self.assertRaisesRegex(FileNotFoundError,'Windows PowerShell was not found'):td.windows_powershell()
     def test_https_only(self):
         for value in ['http://example.com/file.exe','file:///etc/passwd','https://user:secret@example.com/file']:
             with self.assertRaises(ValueError):td.validate_url(value)
