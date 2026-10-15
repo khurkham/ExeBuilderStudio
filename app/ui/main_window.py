@@ -194,7 +194,7 @@ class Window(QMainWindow):
     # Main workflow tabs are grouped by target platform and task.
     self.tabs=QTabWidget(); layout.addWidget(self.tabs); self.pages={}
     # Keep one clear workflow per target platform; legacy EXE tabs duplicated the Windows setup flows.
-    for key in ['win_java','win_python','mac_java','mac_python','icon','tools']:
+    for key in ['win_java','win_python','mac_java','mac_python','icon','win_tools','mac_tools']:
       page=QWidget(); form=QFormLayout(page); form.setSizeConstraint(QLayout.SetMinimumSize); form.setVerticalSpacing(12); self.pages[key]=form
       scroll=QScrollArea(); scroll.setWidgetResizable(True); scroll.setWidget(page); self.tabs.addTab(scroll,key)
     # Build tabs collect the source, output location, application name, and optional icon.
@@ -224,7 +224,7 @@ class Window(QMainWindow):
       edit=QLineEdit(str(self.settings.value('tools/'+key,default)))
       self.fields['tools/'+key]=edit
     self.tools_intro=QLabel(); self.tools_intro.setWordWrap(True)
-    self.pages['tools'].addRow(self.tools_intro)
+    self.pages['win_tools'].addRow(self.tools_intro)
     # Let users explicitly choose which installed JDK is used for Java installer builds.
     self.jdk_selector = QComboBox()
     self.jdk_selector.setMinimumContentsLength(28)
@@ -233,20 +233,28 @@ class Window(QMainWindow):
     jdk_row = QWidget(); jdk_layout = QHBoxLayout(jdk_row); jdk_layout.setContentsMargins(0, 0, 0, 0)
     jdk_layout.addWidget(self.jdk_selector, 1); jdk_layout.addWidget(self.jdk_refresh); jdk_layout.addWidget(self.jdk_browse)
     self.jdk_label = QLabel('JDK used for Java builds (JDK 17 or newer)')
-    self.pages['tools'].addRow(self.jdk_label, jdk_row)
+    self.pages['win_tools'].addRow(self.jdk_label, jdk_row)
     self.jdk_selector.currentIndexChanged.connect(self.persist_jdk_selection)
     self.jdk_refresh.clicked.connect(self.refresh_jdk_choices)
     self.jdk_browse.clicked.connect(self.browse_jdk_folder)
     self.refresh_jdk_choices()
-    # The in-app download cards currently provide Windows installers; do not show them on macOS.
-    self.mac_tools_note = None
-    if sys.platform == 'darwin':
-      self.mac_tools_note = QLabel()
-      self.mac_tools_note.setWordWrap(True)
-      self.pages['tools'].addRow(self.mac_tools_note)
-    else:
-      for key in ['java','inno','python','pyinstaller']:
-        add_tool_card(self,key,self.pages['tools'])
+    # Windows tools offer Windows installers; macOS tools are detected locally.
+    self.mac_tools_note = QLabel()
+    self.mac_tools_note.setWordWrap(True)
+    self.pages['mac_tools'].addRow(self.mac_tools_note)
+    self.mac_tool_status = QLabel()
+    self.mac_tool_status.setWordWrap(True)
+    self.pages['mac_tools'].addRow(self.mac_tool_status)
+    self.mac_tools_refresh = QPushButton('Refresh macOS tool status')
+    self.mac_tools_refresh.clicked.connect(self.refresh_platform_tools)
+    self.pages['mac_tools'].addRow(self.mac_tools_refresh)
+    for key in ['java','inno','python','pyinstaller']:
+      add_tool_card(self,key,self.pages['win_tools'])
+    self.refresh_platform_tools()
+    # The non-native platform's tool actions are intentionally unavailable.
+    self.win_tools_index = 5
+    self.mac_tools_index = 6
+    self._apply_tool_platform_state()
     about=QWidget(); box=QVBoxLayout(about); logo=QLabel(); logo.setPixmap(QPixmap(str(resource('logo.png'))).scaled(140,140,Qt.KeepAspectRatio,Qt.SmoothTransformation)); box.addWidget(logo); self.about_text=QLabel(); self.about_text.setWordWrap(True); box.addWidget(self.about_text); self.mac_update_note=None
     if sys.platform == 'darwin':
       self.mac_update_note=QLabel(); self.mac_update_note.setWordWrap(True); box.addWidget(self.mac_update_note)
@@ -398,12 +406,13 @@ class Window(QMainWindow):
     i=self.lang.currentIndex(); self.settings.setValue('language',i); self.setWindowTitle(T['title'][i]); self.title.setText(T['title'][i]+' • '+APP_VERSION); self.title.setStyleSheet('font-size:26px; color:#7dcfff;')
     apply_font(self,i)
     for widget,key in self.labels: widget.setText(T.get(key,(key,key,key))[i])
-    for j,key in enumerate(self.pages): self.tabs.setTabText(j,T[key][i])
+    for j,key in enumerate(self.pages): self.tabs.setTabText(j,T.get(key, (key,key,key))[i])
     self.tools_intro.setText([
       'Build native installers only on their target operating system. Windows builds *_Setup.exe; macOS builds *_Setup.dmg. No cloud build, GitHub repository, or token is required. Launch4j is not required.',
       'ให้สร้างตัวติดตั้งบนระบบปฏิบัติการเป้าหมายเท่านั้น: Windows สร้าง *_Setup.exe และ Mac สร้าง *_Setup.dmg ไม่ใช้ Cloud Build, GitHub Repository หรือ Token และไม่จำเป็นต้องใช้ Launch4j',
       'သၢင်ႈ installer ၼိူဝ် OS ဢၼ်မႅၼ်ႈၵၼ်ၵူၺ်း: Windows သၢင်ႈ *_Setup.exe၊ Mac သၢင်ႈ *_Setup.dmg။ ဢမ်ႇၸႂ်ႉ Cloud Build၊ GitHub Repository၊ ဢမ်ႇလူဝ်ႇ Launch4j'
     ][self.lang.currentIndex()])
+    self.mac_tools_refresh.setText(['Refresh macOS tool status', 'ตรวจสอบเครื่องมือ macOS อีกครั้ง', 'ၵူတ်ႇၶိူင်ႈမိုဝ်း macOS ထႅင်ႈ'][i])
     self.jdk_label.setText(['JDK used for Java builds (JDK 17 or newer)', 'JDK ที่ใช้สร้างตัวติดตั้ง Java (JDK 17 ขึ้นไป)', 'JDK ဢၼ်ၸႂ်ႉသၢင်ႈ Java (JDK 17 ၶိုၼ်ႈၵႂႃႇ)'][i])
     self.jdk_refresh.setText(['Refresh JDK list', 'ค้นหา JDK อีกครั้ง', 'ၵူတ်ႇ JDK ထႅင်ႈ'][i])
     self.jdk_browse.setText(['Browse JDK folder…', 'เลือกโฟลเดอร์ JDK…', 'လိူၵ်ႈၾူဝ်ႇလ်ႇတိူဝ်ႇ JDK…'][i])
@@ -419,6 +428,68 @@ class Window(QMainWindow):
         'เวอร์ชัน macOS แจกจ่ายเป็นไฟล์ DMG แยกต่างหาก จึงปิดตัวอัปเดต EXE ของ Windows ในแอปนี้',
         'macOS ဝႃးသျိၼ်းမႂ်ႇ တေၸႅၵ်ႇပၼ်ၼႂ်းၾၢႆႇ DMG။ ပိၵ်ႉ Windows EXE updater ဝႆႉ'
       ][i])
+ def _apply_tool_platform_state(self):
+    """Keep install actions limited to the host operating system."""
+    is_windows = os.name == 'nt'
+    is_macos = sys.platform == 'darwin'
+    self.tabs.setTabEnabled(self.win_tools_index, is_windows)
+    self.tabs.setTabEnabled(self.mac_tools_index, is_macos)
+    # Let users inspect the other platform's checklist while keeping it read-only.
+    self.tabs.setTabEnabled(self.win_tools_index, True)
+    self.tabs.setTabEnabled(self.mac_tools_index, True)
+    for card in getattr(self, 'tool_cards', []):
+      try:
+        card.setEnabled(is_windows)
+      except AttributeError:
+        pass
+    if hasattr(self, 'mac_tools_refresh'):
+      self.mac_tools_refresh.setEnabled(is_macos)
+
+ def refresh_platform_tools(self):
+    """Show local status for macOS prerequisites without installing anything silently."""
+    if not hasattr(self, 'mac_tool_status'):
+      return
+    def check(command):
+      path = shutil.which(command)
+      if not path:
+        return 'Not installed'
+      try:
+        if command == 'python3':
+          result = subprocess.run([path, '--version'], capture_output=True, text=True, timeout=4)
+          return (result.stdout or result.stderr).strip() or 'Installed'
+        if command == 'java':
+          result = subprocess.run([path, '-version'], capture_output=True, text=True, timeout=4)
+          line = (result.stderr or result.stdout).splitlines()
+          return line[0].strip() if line else 'Installed'
+        return 'Installed: ' + path
+      except (OSError, subprocess.SubprocessError):
+        return 'Installed: ' + path
+    jdk = 'Not detected'
+    for candidate in (os.environ.get('JAVA_HOME', ''), '/Library/Java/JavaVirtualMachines'):
+      p = Path(candidate).expanduser() if candidate else None
+      if p and p.exists():
+        if p.name == 'JavaVirtualMachines':
+          homes = sorted(p.glob('*.jdk/Contents/Home'))
+          if homes:
+            jdk = str(homes[-1]); break
+        elif (p / 'bin' / 'jpackage').is_file() or (p / 'bin' / 'jpackage.exe').is_file():
+          jdk = str(p); break
+    rows = [
+      'Java JDK / jpackage: ' + jdk,
+      'Python 3: ' + check('python3'),
+      'PyInstaller: ' + ('Installed in selected Python' if check('python3') != 'Not installed' else 'Requires Python 3'),
+      'Xcode Command Line Tools: ' + ('Installed' if Path('/Library/Developer/CommandLineTools').exists() or Path('/Applications/Xcode.app').exists() else 'Not detected'),
+      'hdiutil (DMG): ' + ('Available' if Path('/usr/bin/hdiutil').exists() else 'Not available'),
+      'ICNS conversion: handled by ExeBuilderStudio when supported',
+    ]
+    self.mac_tool_status.setText('\\n'.join(rows))
+    is_macos = sys.platform == 'darwin'
+    self.mac_tools_refresh.setEnabled(is_macos)
+    if not is_macos:
+      self.mac_tools_note.setText('Read-only checklist for macOS. Install and verify these tools on a Mac; Windows cannot install macOS developer tools.')
+    else:
+      self.mac_tools_note.setText('macOS prerequisites are checked locally. Install only the tools marked Not installed; Xcode Command Line Tools are needed only when a build dependency requires them.')
+
  # Persist normal UI settings and clear obsolete settings from older versions.
  def save_settings(self):
     for key,w in self.fields.items():
