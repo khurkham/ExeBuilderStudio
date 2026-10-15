@@ -5,8 +5,8 @@ from urllib.parse import urljoin, urlparse
 from urllib.request import Request, build_opener, HTTPSHandler, HTTPRedirectHandler
 from html.parser import HTMLParser
 # Centralized metadata and network helpers for optional developer tools and app updates.
-APP_VERSION = '1.2'
-BUILD_REVISION = '2026.10.15.2'
+APP_VERSION = '1.1'
+BUILD_REVISION = '2026.10.15.3'
 # Publisher configures this before building. End users do not set an update source.
 UPDATE_REPOSITORY = 'khurkham/ExeBuilderStudio'
 NAMES = {'java':'Java (Temurin JDK)', 'launch4j':'Launch4j', 'inno':'Inno Setup', 'python':'Python', 'pyinstaller':'PyInstaller', 'studio':'ExeBuilderStudio'}
