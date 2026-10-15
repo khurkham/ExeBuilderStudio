@@ -242,9 +242,19 @@ class Window(QMainWindow):
     self.mac_tools_note = QLabel()
     self.mac_tools_note.setWordWrap(True)
     self.pages['mac_tools'].addRow(self.mac_tools_note)
-    self.mac_tool_status = QLabel()
-    self.mac_tool_status.setWordWrap(True)
-    self.pages['mac_tools'].addRow(self.mac_tool_status)
+    self.mac_tool_rows = {}
+    for tool_key, tool_title in [
+      ('java', 'Java JDK / jpackage'),
+      ('python', 'Python 3'),
+      ('pyinstaller', 'PyInstaller'),
+      ('xcode', 'Xcode Command Line Tools'),
+      ('hdiutil', 'hdiutil (DMG)'),
+      ('icns', 'ICNS conversion'),
+    ]:
+      value = QLabel('Checking…')
+      value.setWordWrap(True)
+      self.mac_tool_rows[tool_key] = value
+      self.pages['mac_tools'].addRow(tool_title + ':', value)
     self.mac_tools_refresh = QPushButton('Refresh macOS tool status')
     self.mac_tools_refresh.clicked.connect(self.refresh_platform_tools)
     self.pages['mac_tools'].addRow(self.mac_tools_refresh)
@@ -460,7 +470,7 @@ class Window(QMainWindow):
 
  def refresh_platform_tools(self):
     """Show local status for macOS prerequisites without installing anything silently."""
-    if not hasattr(self, 'mac_tool_status'):
+    if not hasattr(self, 'mac_tool_rows'):
       return
     def check(command):
       path = shutil.which(command)
@@ -487,15 +497,16 @@ class Window(QMainWindow):
             jdk = str(homes[-1]); break
         elif (p / 'bin' / 'jpackage').is_file() or (p / 'bin' / 'jpackage.exe').is_file():
           jdk = str(p); break
-    rows = [
-      'Java JDK / jpackage: ' + jdk,
-      'Python 3: ' + check('python3'),
-      'PyInstaller: ' + self._check_pyinstaller(),
-      'Xcode Command Line Tools: ' + ('Installed' if Path('/Library/Developer/CommandLineTools').exists() or Path('/Applications/Xcode.app').exists() else 'Not detected'),
-      'hdiutil (DMG): ' + ('Available' if Path('/usr/bin/hdiutil').exists() else 'Not available'),
-      'ICNS conversion: handled by ExeBuilderStudio when supported',
-    ]
-    self.mac_tool_status.setText('\\n'.join(rows))
+    statuses = {
+      'java': jdk,
+      'python': check('python3'),
+      'pyinstaller': self._check_pyinstaller(),
+      'xcode': 'Installed' if Path('/Library/Developer/CommandLineTools').exists() or Path('/Applications/Xcode.app').exists() else 'Not detected (only needed by some build dependencies)',
+      'hdiutil': 'Available' if Path('/usr/bin/hdiutil').exists() else 'Not available (macOS only)',
+      'icns': 'Handled by ExeBuilderStudio when supported',
+    }
+    for tool_key, status in statuses.items():
+      self.mac_tool_rows[tool_key].setText(status)
     is_macos = sys.platform == 'darwin'
     self.mac_tools_refresh.setEnabled(is_macos)
     if not is_macos:
