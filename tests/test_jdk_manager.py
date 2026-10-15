@@ -3,7 +3,6 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 
 from app.services.jdk_manager import jdk_version, validate_jdk_home
 from app.services.windows_native_builder import _find_jpackage

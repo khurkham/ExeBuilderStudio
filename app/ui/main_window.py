@@ -5,16 +5,17 @@ UI orchestration lives here; the root main.py remains the stable launcher.
 import sys, os, shutil, subprocess, tempfile, zipfile
 from pathlib import Path
 from PySide6.QtCore import QProcess, QSettings, QUrl, Qt, QObject, QThread, Signal
-from PySide6.QtGui import QFont, QFontDatabase, QDesktopServices, QPixmap, QIcon
-from PySide6.QtWidgets import (QApplication,QMainWindow,QWidget,QVBoxLayout,QHBoxLayout,QFormLayout,QLineEdit,QPushButton,QComboBox,QTabWidget,QPlainTextEdit,QFileDialog,QLabel,QMessageBox,QScrollArea,QLayout,QProgressBar)
+from PySide6.QtGui import QDesktopServices, QPixmap, QIcon
+from PySide6.QtWidgets import (QMainWindow,QWidget,QVBoxLayout,QHBoxLayout,QFormLayout,QLineEdit,QPushButton,QComboBox,QTabWidget,QPlainTextEdit,QFileDialog,QLabel,QMessageBox,QScrollArea,QLayout,QProgressBar)
 from backend import *
 from app.services.macos_builder import create_macos_build_kit
 from app.services.windows_native_builder import build_windows_installer, resolve_jdk_home
 from app.services.jdk_manager import discover_jdk_homes, validate_jdk_home
+from app.services.macos_updates import MacUpdateCard
 from app.services.universal_updates import UniversalUpdateCard
-from download_ui import add_tool_card, add_about_updater, translate_downloads
-from tool_downloads import APP_VERSION, BUILD_REVISION
-from ui_assets import resource, load_fonts, apply_font, FAMILIES, FONT_ERRORS
+from download_ui import add_tool_card, add_about_updater
+from tool_downloads import APP_VERSION
+from ui_assets import resource, apply_font
 
 # English, Thai, Shan. Labels are switched together; technical tool names stay unchanged.
 from app.translations import T
@@ -195,7 +196,7 @@ class Window(QMainWindow):
     # Main workflow tabs are grouped by target platform and task.
     self.tabs=QTabWidget(); layout.addWidget(self.tabs); self.pages={}
     # Keep one clear workflow per target platform; legacy EXE tabs duplicated the Windows setup flows.
-    for key in ['win_java','win_python','mac_java','mac_python','icon','tools']:
+    for key in ['win_java','win_python','mac_java','mac_python','icon','win_tools','mac_tools']:
       page=QWidget(); form=QFormLayout(page); form.setSizeConstraint(QLayout.SetMinimumSize); form.setVerticalSpacing(12); self.pages[key]=form
       scroll=QScrollArea(); scroll.setWidgetResizable(True); scroll.setWidget(page); self.tabs.addTab(scroll,key)
     # Build tabs collect the source, output location, application name, and optional icon.
@@ -225,7 +226,7 @@ class Window(QMainWindow):
       edit=QLineEdit(str(self.settings.value('tools/'+key,default)))
       self.fields['tools/'+key]=edit
     self.tools_intro=QLabel(); self.tools_intro.setWordWrap(True)
-    self.pages['tools'].addRow(self.tools_intro)
+    self.pages['win_tools'].addRow(self.tools_intro)
     # Let users explicitly choose which installed JDK is used for Java installer builds.
     self.jdk_selector = QComboBox()
     self.jdk_selector.setMinimumContentsLength(28)
@@ -234,26 +235,63 @@ class Window(QMainWindow):
     jdk_row = QWidget(); jdk_layout = QHBoxLayout(jdk_row); jdk_layout.setContentsMargins(0, 0, 0, 0)
     jdk_layout.addWidget(self.jdk_selector, 1); jdk_layout.addWidget(self.jdk_refresh); jdk_layout.addWidget(self.jdk_browse)
     self.jdk_label = QLabel('JDK used for Java builds (JDK 17 or newer)')
-    self.pages['tools'].addRow(self.jdk_label, jdk_row)
+    self.pages['win_tools'].addRow(self.jdk_label, jdk_row)
     self.jdk_selector.currentIndexChanged.connect(self.persist_jdk_selection)
     self.jdk_refresh.clicked.connect(self.refresh_jdk_choices)
     self.jdk_browse.clicked.connect(self.browse_jdk_folder)
     self.refresh_jdk_choices()
-    # The in-app download cards currently provide Windows installers; do not show them on macOS.
-    self.mac_tools_note = None
-    if sys.platform == 'darwin':
-      self.mac_tools_note = QLabel()
-      self.mac_tools_note.setWordWrap(True)
-      self.pages['tools'].addRow(self.mac_tools_note)
-    else:
-      for key in ['java','inno','python','pyinstaller']:
-        add_tool_card(self,key,self.pages['tools'])
-    # Preserve the original About content and its existing Windows updater controls.
-    # Append the cross-platform updater below the original card instead of replacing it.
+    # Windows-specific tool cards remain in their own tab.
+    for key in ['java','inno','python','pyinstaller']:
+      add_tool_card(self,key,self.pages['win_tools'])
+    self.win_tool_rows = {}
+    for tool_key, tool_title in [('wix', 'WiX Toolset (optional)'), ('ico', 'ICO icon conversion')]:
+      value = QLabel('Checking…'); value.setWordWrap(True)
+      self.win_tool_rows[tool_key] = value
+      self.pages['win_tools'].addRow(tool_title + ':', value)
+    # macOS tools have a local status row and explicit official-download/help action.
+    self.mac_tools_note = QLabel(); self.mac_tools_note.setWordWrap(True)
+    self.pages['mac_tools'].addRow(self.mac_tools_note)
+    self.mac_tool_rows = {}
+    self.mac_tool_links = {
+      'java': ('Java JDK / jpackage', 'https://adoptium.net/temurin/releases/'),
+      'python': ('Python 3', 'https://www.python.org/downloads/macos/'),
+      'pyinstaller': ('PyInstaller', 'https://pyinstaller.org/en/stable/installation.html'),
+      'xcode': ('Xcode Command Line Tools', 'https://developer.apple.com/xcode/resources/'),
+      'hdiutil': ('hdiutil (DMG)', 'https://support.apple.com/guide/terminal/welcome/mac'),
+      'icns': ('ICNS conversion', 'https://pillow.readthedocs.io/en/stable/'),
+    }
+    self.mac_tools_check_buttons = []
+    for tool_key, (tool_title, url) in self.mac_tool_links.items():
+      status = QLabel('Not checked yet'); status.setWordWrap(True)
+      self.mac_tool_rows[tool_key] = status
+      actions = QWidget(); actions_layout = QHBoxLayout(actions); actions_layout.setContentsMargins(0, 0, 0, 0)
+      check_button = QPushButton('Check')
+      check_button.clicked.connect(lambda checked=False, k=tool_key: self.check_mac_tool(k))
+      download_button = QPushButton('Download / Help')
+      download_button.clicked.connect(lambda checked=False, u=url: QDesktopServices.openUrl(QUrl(u)))
+      actions_layout.addWidget(check_button); actions_layout.addWidget(download_button)
+      self.mac_tools_check_buttons.append(check_button)
+      self.pages['mac_tools'].addRow(tool_title + ':', status)
+      self.pages['mac_tools'].addRow(actions)
+    self.mac_tools_refresh = QPushButton('Check all macOS tools')
+    self.mac_tools_refresh.clicked.connect(self.refresh_platform_tools)
+    self.pages['mac_tools'].addRow(self.mac_tools_refresh)
+    self.refresh_platform_tools()
     about=QWidget(); box=QVBoxLayout(about); logo=QLabel(); logo.setPixmap(QPixmap(str(resource('logo.png'))).scaled(140,140,Qt.KeepAspectRatio,Qt.SmoothTransformation)); box.addWidget(logo); self.about_text=QLabel(); self.about_text.setWordWrap(True); box.addWidget(self.about_text); self.mac_update_note=None; self.mac_update_card=None
-    if os.name == 'nt':
-      add_about_updater(self, box)
-    self.update_card=UniversalUpdateCard(); box.addWidget(self.update_card)
+    # Preserve the original About metadata above all update controls.
+    self.about_text.setText(
+      f'EXE Builder Studio • Version {APP_VERSION}\n'
+      'Developed by Khurkham Langkhur\n'
+      'Java / Python EXE, Inno Setup, ICO\n'
+      'Embedded fonts: TH Sarabun New / A J Kunheing E-T-M 05'
+    )
+    # Keep the original platform-specific About card and its existing controls.
+    if sys.platform == 'darwin':
+      self.mac_update_card=MacUpdateCard(); box.addWidget(self.mac_update_card)
+    else:
+      add_about_updater(self,box)
+    # Add the cross-platform updater below the original About content; do not replace it.
+    self.universal_update_card=UniversalUpdateCard(); box.addWidget(self.universal_update_card)
     box.addStretch(); about_scroll=QScrollArea(); about_scroll.setWidgetResizable(True); about_scroll.setWidget(about); self.about_index=self.tabs.addTab(about_scroll,'About')
     self.status=QLabel(); layout.addWidget(self.status)
     # Show a horizontal progress bar and current build phase so long builds feel responsive.
@@ -344,6 +382,59 @@ class Window(QMainWindow):
       QMessageBox.warning(self, 'EXE Builder Studio', str(exc))
 
 
+ def check_mac_tool(self, tool_key):
+    """Check a macOS prerequisite locally; never attempts silent installation."""
+    if sys.platform != 'darwin':
+      message = 'Check this tool on a Mac; it cannot be detected from Windows.'
+    elif tool_key == 'java':
+      homes = []
+      java_home = os.environ.get('JAVA_HOME', '')
+      if java_home and (Path(java_home) / 'bin' / 'jpackage').is_file(): homes.append(java_home)
+      root = Path('/Library/Java/JavaVirtualMachines')
+      if root.exists(): homes.extend(str(p) for p in root.glob('*.jdk/Contents/Home') if (p / 'bin' / 'jpackage').is_file())
+      message = homes[0] if homes else 'JDK 17+ with jpackage not detected'
+    elif tool_key == 'python':
+      executable = shutil.which('python3')
+      if executable:
+        try:
+          result = subprocess.run([executable, '--version'], capture_output=True, text=True, timeout=5)
+          message = (result.stdout or result.stderr).strip() or executable
+        except Exception as exc: message = 'Found but could not query: ' + str(exc)
+      else: message = 'Python 3 not detected'
+    elif tool_key == 'pyinstaller':
+      executable = shutil.which('python3')
+      if not executable: message = 'Requires Python 3'
+      else:
+        try:
+          result = subprocess.run([executable, '-m', 'PyInstaller', '--version'], capture_output=True, text=True, timeout=5)
+          message = (result.stdout or result.stderr).strip() if result.returncode == 0 else 'Not installed'
+        except Exception: message = 'Not installed'
+    elif tool_key == 'xcode':
+      message = 'Installed' if Path('/Library/Developer/CommandLineTools').exists() or Path('/Applications/Xcode.app').exists() else 'Not detected (only needed by some build dependencies)'
+    elif tool_key == 'hdiutil':
+      message = 'Available' if Path('/usr/bin/hdiutil').is_file() else 'Not available; macOS only'
+    else:
+      try:
+        import PIL.Image
+        message = 'Available (Pillow)' if sys.platform == 'darwin' else 'Pillow available; verify ICNS support on Mac'
+      except Exception: message = 'Use the built-in converter when supported; otherwise see Pillow documentation'
+    self.mac_tool_rows[tool_key].setText(message)
+    return message
+
+ def refresh_platform_tools(self):
+    """Refresh both platform checklists without silently installing software."""
+    for tool_key in self.mac_tool_rows:
+      self.check_mac_tool(tool_key)
+    if hasattr(self, 'win_tool_rows'):
+      wix = shutil.which('wix') or shutil.which('wix.exe') or shutil.which('candle.exe')
+      self.win_tool_rows['wix'].setText('Installed: ' + wix if wix else 'Optional; not detected')
+      try:
+        import PIL.Image
+        ico_status = 'Available (Pillow)'
+      except Exception:
+        ico_status = 'Built-in conversion when supported; Pillow not detected'
+      self.win_tool_rows['ico'].setText(ico_status)
+
  def refresh_jdk_choices(self, selected_path=None):
     """Refresh the selector with installed JDKs that include jpackage."""
     saved = selected_path or str(self.settings.value('tools/jdk_home', ''))
@@ -407,26 +498,25 @@ class Window(QMainWindow):
       'သၢင်ႈ installer ၼိူဝ် OS ဢၼ်မႅၼ်ႈၵၼ်ၵူၺ်း: Windows သၢင်ႈ *_Setup.exe၊ Mac သၢင်ႈ *_Setup.dmg။ ဢမ်ႇၸႂ်ႉ Cloud Build၊ GitHub Repository၊ ဢမ်ႇလူဝ်ႇ Launch4j'
     ][self.lang.currentIndex()])
     self.jdk_label.setText(['JDK used for Java builds (JDK 17 or newer)', 'JDK ที่ใช้สร้างตัวติดตั้ง Java (JDK 17 ขึ้นไป)', 'JDK ဢၼ်ၸႂ်ႉသၢင်ႈ Java (JDK 17 ၶိုၼ်ႈၵႂႃႇ)'][i])
-    self.jdk_refresh.setText(['Refresh JDK list', 'ค้นหา JDK อีกครั้ง', 'ၵူတ်ႇ JDK ထႅင်ႈ'][i])
+    self.jdk_refresh.setText(['Refresh JDK list', 'ค้นหา JDK อีกครั้ง', 'ၸႅတ်ႈထတ်း JDK ထႅင်ႈ'][i])
     self.jdk_browse.setText(['Browse JDK folder…', 'เลือกโฟลเดอร์ JDK…', 'လိူၵ်ႈၾူဝ်ႇလ်ႇတိူဝ်ႇ JDK…'][i])
-    # Restore the original About text; keep the original Windows updater and
-    # append the cross-platform updater below it.
-    about_lines = [
-      f'EXE Builder Studio • Version {APP_VERSION}\\nDeveloped by Khurkham Langkhur\\nJava / Python EXE, Inno Setup, ICO\\nEmbedded fonts: ' + ' / '.join(FAMILIES.values()),
-      f'EXE Builder Studio • เวอร์ชัน {APP_VERSION}\\nพัฒนาโดย Khurkham Langkhur\\nสร้าง EXE จาก Java / Python สร้างตัวติดตั้ง และแปลง ICO\\nฟอนต์ที่ฝัง: ' + ' / '.join(FAMILIES.values()),
-      f'EXE Builder Studio • ဝႃးသျိၼ်း {APP_VERSION}\\nၽူႈသၢင်ႈ Khurkham Langkhur\\nJava / Python EXE, Inno Setup, ICO\\nၾွၼ်ႉ: ' + ' / '.join(FAMILIES.values()),
-    ]
-    self.about_text.setText(about_lines[i])
-    if self.mac_tools_note is not None:
-      self.mac_tools_note.setText([
-        'macOS edition: the app runtime is bundled. Java builds need a full JDK 17+ with jpackage. Python-project builds need Python 3 on this Mac and may need internet to install project dependencies.',
-        'รุ่น macOS รวม Runtime ของตัวโปรแกรมไว้แล้ว การสร้าง Java ต้องมี Full JDK 17+ ที่มี jpackage ส่วนการสร้างโปรเจกต์ Python ต้องมี Python 3 บน Mac และอาจต้องใช้อินเทอร์เน็ตเพื่อติดตั้ง Dependencies',
-        'macOS ဝႃးသျိၼ်းၼႆႉ Bundle runtime ပရူဝ်ႇၵရမ်ႇဝႆႉ။ Java တေလူဝ်ႇ Full JDK 17+ ဢၼ်မီး jpackage။ Python project တေလူဝ်ႇ Python 3 လႄႈ ၸၢင်ႈလူဝ်ႇ Internet တႃႇတိတ်းတင်ႈ Dependencies'
-      ][i])
-    # Keep the original updater card translated as well as the new cross-platform card.
-    translate_downloads(self)
-    if getattr(self, 'update_card', None) is not None:
-      self.update_card.set_language(i)
+    self.mac_tools_note.setText([
+      'macOS prerequisites are listed separately. Use Check to inspect this Mac and Download / Help to open the official vendor page. hdiutil is built into macOS; Xcode tools are only needed by some dependencies.',
+      'รายการเครื่องมือ macOS แยกไว้ด้านล่าง กดตรวจสอบเพื่อตรวจบน Mac และกดดาวน์โหลด/คู่มือเพื่อเปิดเว็บไซต์ทางการ hdiutil มีมากับ macOS ส่วน Xcode จำเป็นเฉพาะบาง Dependencies',
+      'macOS ၶိူင်ႈမိုဝ်းၸႅၵ်ႇဝႆႉတၢင်းတႂ်ႈ။ ၸႅတ်ႈထတ်းတႃႇတူၺ်းၼိူဝ် Mac၊ Download / Help တေပိုတ်ႇဝႅပ်ႉတၢင်းၵၢၼ်။ hdiutil မီးမႃးၸွမ်း macOS'
+    ][i])
+    self.mac_tools_refresh.setText(['Check all macOS tools', 'ตรวจสอบเครื่องมือ macOS ทั้งหมด', 'ၸႅတ်ႈထတ်းၶိူင်ႈမိုဝ်း macOS တင်းသဵင်ႈ'][i])
+    for button in self.mac_tools_check_buttons:
+      button.setText(['Check', 'ตรวจสอบ', 'ၸႅတ်ႈထတ်း'][i])
+    self.about_text.setText([
+      f'EXE Builder Studio • Version {APP_VERSION}\nDeveloped by Khurkham Langkhur\nJava / Python EXE, Inno Setup, ICO\nEmbedded fonts: TH Sarabun New / A J Kunheing E-T-M 05',
+      f'EXE Builder Studio • เวอร์ชัน {APP_VERSION}\nผู้พัฒนา: Khurkham Langkhur\nJava / Python EXE, Inno Setup, ICO\nฟอนต์ที่ฝัง: TH Sarabun New / A J Kunheing E-T-M 05',
+      f'EXE Builder Studio • ဝႃးသျိၼ်း {APP_VERSION}\nၽူႈသၢင်ႈ: Khurkham Langkhur\nJava / Python EXE, Inno Setup, ICO\nၾွၼ်ႉ: TH Sarabun New / A J Kunheing E-T-M 05'
+    ][i])
+    if self.mac_update_card is not None:
+      self.mac_update_card.set_language(i)
+    if getattr(self, 'universal_update_card', None) is not None:
+      self.universal_update_card.set_language(i)
  # Persist normal UI settings and clear obsolete settings from older versions.
  def save_settings(self):
     for key,w in self.fields.items():

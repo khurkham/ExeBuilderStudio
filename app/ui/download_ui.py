@@ -1,23 +1,23 @@
 """In-app tool cards. Network/process work runs outside the GUI thread."""
-import hashlib, json, os, subprocess, sys, time
+import hashlib, json, os, subprocess, time
 from pathlib import Path
 from app.services.windows_native_builder import resolve_jdk_home
 from PySide6.QtCore import QThread, Signal, QProcess, QTimer
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QProgressBar,QLineEdit,QComboBox,QMessageBox,QApplication,QGridLayout,QLayout,QSizePolicy
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QProgressBar,QComboBox,QApplication,QGridLayout,QLayout,QSizePolicy
 from tool_downloads import *
 # The tool-card UI delegates downloads to worker threads so the window remains responsive.
 WORDS={
- 'unchecked':('Not checked yet. Click Check program.','ยังไม่ได้ตรวจสอบ กดตรวจสอบโปรแกรม','ၸႂ်ႉၵူတ်ႇပရူဝ်ႇၵရမ်ႇ။'),
- 'check':('Check program','ตรวจสอบโปรแกรม','ၵူတ်ႇပရူဝ်ႇၵရမ်ႇ'),
+ 'unchecked':('Not checked yet. Click Check program.','ยังไม่ได้ตรวจสอบ กดตรวจสอบโปรแกรม','ၸႂ်ႉၸႅတ်ႈထတ်းပရူဝ်ႇၵရႅမ်ႇ။'),
+ 'check':('Check program','ตรวจสอบโปรแกรม','ၸႅတ်ႈထတ်းပရူဝ်ႇၵရႅမ်ႇ'),
  'download':('Download','ดาวน์โหลด','လူတ်ႇ'),
  'update':('Update','อัปเดต','ဢပ်ႉတဵတ်ႉ'),
  'install':('Install downloaded file','ติดตั้งไฟล์ที่ดาวน์โหลด','တိတ်းတင်ႈၾၢႆႇလူတ်ႇယဝ်ႉ'),
- 'missing':('Not installed. Please download the program.','ยังไม่มีในเครื่อง กรุณาดาวน์โหลดโปรแกรม','ဢမ်ႇမီးၼႂ်းၶွမ်း။ ၶႅၼ်းတေႃႈလူတ်ႇပရူဝ်ႇၵရမ်ႇ။'),
- 'unverified':('Found; version could not be verified','พบไฟล์โปรแกรม แต่ตรวจสอบเวอร์ชันไม่ได้','မီးၾၢႆႇပရူဝ်ႇၵရမ်ႇ။ ၵူတ်ႇဝႃးသျိၼ်းဢမ်ႇလႆႈ။'),
+ 'missing':('Not installed. Please download the program.','ยังไม่มีในเครื่อง กรุณาดาวน์โหลดโปรแกรม','ဢမ်ႇမီးၼႂ်းၶွမ်း။ ၶႅၼ်းတေႃႈလူတ်ႇပရူဝ်ႇၵရႅမ်ႇ။'),
+ 'unverified':('Found; version could not be verified','พบไฟล์โปรแกรม แต่ตรวจสอบเวอร์ชันไม่ได้','မီးၾၢႆႇပရူဝ်ႇၵရႅမ်ႇ။ ၸႅတ်ႈထတ်းဝႃးသျိၼ်းဢမ်ႇလႆႈ။'),
  'found':('Installed','พบโปรแกรมในเครื่อง','မီးၼႂ်းၶွမ်းယဝ်ႉ'),
  'ready':('Ready to install','ดาวน์โหลดเสร็จ พร้อมติดตั้ง','လူတ်ႇယဝ်ႉ တိတ်းတင်ႈလႆႈ'),
- 'checking':('Checking…','กำลังตรวจสอบ…','တိုၵ်ႉၵူတ်ႇ…'),
- 'resolving':('Checking latest release…','กำลังตรวจสอบรุ่นล่าสุด…','တိုၵ်ႉၵူတ်ႇဝႃးသျိၼ်းမႂ်ႇ…'),
+ 'checking':('Checking…','กำลังตรวจสอบ…','တိုၵ်ႉၸႅတ်ႈထတ်း…'),
+ 'resolving':('Checking latest release…','กำลังตรวจสอบรุ่นล่าสุด…','တိုၵ်ႉၸႅတ်ႈထတ်းဝႃးသျိၼ်းမႂ်ႇ…'),
  'downloading':('Downloading…','กำลังดาวน์โหลด…','တိုၵ်ႉလူတ်ႇ…'),
  'installing':('Installing…','กำลังติดตั้ง…','တိုၵ်ႉတိတ်းတင်ႈ…'),
  'current':('Already up to date','เป็นรุ่นปัจจุบันแล้ว','ပဵၼ်ဝႃးသျိၼ်းမႂ်ႇယဝ်ႉ'),
@@ -27,7 +27,7 @@ WORDS={
  'save':('Save update source','บันทึกแหล่งอัปเดต','သိမ်းတီႈဢပ်ႉတဵတ်ႉ'),
  'saved':('Update source saved','บันทึกแหล่งอัปเดตแล้ว','သိမ်းတီႈဢပ်ႉတဵတ်ႉယဝ်ႉ'),
  'notconfigured':('The publisher has not enabled online updates yet.','ผู้พัฒนายังไม่ได้เปิดบริการอัปเดตออนไลน์','ၽူႈသၢင်ႈဢမ်ႇပႆႇပိုတ်ႇလွင်ႈဢပ်ႉတဵတ်ႉဢွၼ်ႇလၢႆး။'),
- 'note':('Download → Install → Check. Update checks the latest release, downloads it and opens installation when newer.','ดาวน์โหลด → ติดตั้ง → ตรวจสอบ ปุ่มอัปเดตตรวจรุ่นล่าสุด ดาวน์โหลดและเปิดการติดตั้งเมื่อมีรุ่นใหม่','လူတ်ႇ → တိတ်းတင်ႈ → ၵူတ်ႇ။ ဢပ်ႉတဵတ်ႉၵူတ်ႇဝႃးသျိၼ်းမႂ်ႇတီႈတၢင်းၵၢၼ်။'),
+ 'note':('Download → Install → Check. Update checks the latest release, downloads it and opens installation when newer.','ดาวน์โหลด → ติดตั้ง → ตรวจสอบ ปุ่มอัปเดตตรวจรุ่นล่าสุด ดาวน์โหลดและเปิดการติดตั้งเมื่อมีรุ่นใหม่','လူတ်ႇ → တိတ်းတင်ႈ → ၸႅတ်ႈထတ်း။ ဢပ်ႉတဵတ်ႉၸႅတ်ႈထတ်းဝႃးသျိၼ်းမႂ်ႇတီႈတၢင်းၵၢၼ်။'),
  'pip_note':('PyInstaller uses the selected Python. Package downloads show activity and detailed pip output in the log.','PyInstaller ใช้ Python ที่เลือก ขณะดาวน์โหลดแพ็กเกจจะแสดงแถบการทำงานและรายละเอียด pip ใน Log','PyInstaller ၸႂ်ႉ Python ဢၼ်လိူၵ်ႈ။ ၼႄ pip ၼႂ်း Log။'),
  'java_note':('Java is installed in this app’s tools folder. Choose the Java major version required by your project.','Java ติดตั้งในโฟลเดอร์เครื่องมือของแอป เลือกรุ่นหลักให้ตรงกับโปรเจกต์','Java တိတ်းတင်ႈၼႂ်းၾူဝ်ႇလ်ႇတိူဝ်ႇၶိူင်ႈမိုဝ်း။ လိူၵ်ႈဝႃးသျိၼ်းႁႂ်ႈမႅၼ်ႈ project။'),
 }

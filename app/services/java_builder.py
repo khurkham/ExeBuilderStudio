@@ -3,7 +3,7 @@
 from pathlib import Path
 import shutil
 
-from backend import java_candidates, launch_config, require_file, safe_name
+from backend import launch_config, require_file, safe_name
 
 
 def prepare_java_build(*, source, output, name, icon='', minimum='17', jre='', console=False, tool=''):

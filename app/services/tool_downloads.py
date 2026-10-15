@@ -1,5 +1,5 @@
 """Official release discovery, cancellable streaming and local tool detection."""
-import gzip, zlib, hashlib, html, json, os, platform, re, shutil, subprocess, sys, tempfile, time, zipfile
+import gzip, zlib, hashlib, html, json, os, platform, re, shutil, subprocess, sys, tempfile, zipfile
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 from urllib.request import Request, build_opener, HTTPSHandler, HTTPRedirectHandler

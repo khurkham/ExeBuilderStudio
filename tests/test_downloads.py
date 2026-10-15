@@ -77,7 +77,7 @@ class DownloadTests(unittest.TestCase):
             self.assertTrue(result['found']);self.assertEqual(result['path'],str(path))
             self.assertEqual(result['version'],'')
     def test_version_equivalence_and_release_version(self):
-        self.assertEqual(td.APP_VERSION,'1.1')
+        self.assertEqual(td.APP_VERSION,'1.2')
         self.assertEqual(td.version_key('1.0'),td.version_key('1.0.0'))
         self.assertGreater(td.version_key('1.0.1'),td.version_key('1.0.0'))
     def test_quoted_configured_compiler_and_wrong_executable(self):

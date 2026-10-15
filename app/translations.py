@@ -111,6 +111,8 @@ T = {
         'โลโก้ → ICO / ICNS',
         'လူဝ်ႇၵူဝ်ႇ → ICO / ICNS',
     ),
+    'win_tools': ('Windows Tools / Java', 'เครื่องมือ Windows / Java', 'Windows ၶိူင်ႈမိုဝ်း / Java'),
+    'mac_tools': ('macOS Tools / Java', 'เครื่องมือ macOS / Java', 'macOS ၶိူင်ႈမိုဝ်း / Java'),
     'tools': (
         'Tools / Java',
         'เครื่องมือ / Java',
@@ -193,7 +195,7 @@ T = {
     'check': (
         'Check Java',
         'ตรวจ Java',
-        'ၵူတ်ႇထတ်း Java',
+        'ၸႅတ်ႈထတ်း Java',
     ),
     'installjava': (
         'Download / install Java',
