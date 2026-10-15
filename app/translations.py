@@ -118,6 +118,17 @@ T = {
         'เครื่องมือ / Java',
         'ၶိူင်ႈမိုဝ်း / Java',
     ),
+
+    'win_tools': (
+        'Windows Tools / Java',
+        'เครื่องมือ Windows / Java',
+        'ၶိူင်ႈမိုဝ်း Windows / Java',
+    ),
+    'mac_tools': (
+        'macOS Tools / Java',
+        'เครื่องมือ macOS / Java',
+        'ၶိူင်ႈမိုဝ်း macOS / Java',
+    ),
     'browse': (
         'Browse',
         'เลือกไฟล์',

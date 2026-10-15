@@ -130,11 +130,34 @@ class ToolCard(QWidget):
         self.fit_content()
     def word(self,key):return WORDS[key][self.host.lang.currentIndex()]
     def translate(self):
-        for action,button in self.buttons.items():button.setText(self.word(action)+((' '+NAMES[self.key]) if action in ('download','update') else ''))
-        for button in self.buttons.values():button.setMinimumHeight(max(44,button.fontMetrics().height()+24))
+        for action, button in self.buttons.items():
+            button.setText(self.word(action) + ((' ' + NAMES[self.key]) if action in ('download', 'update') else ''))
+        if self.key == 'studio':
+            lang = self.host.lang.currentIndex()
+            labels = [
+                ('Check for Updates', 'ตรวจสอบการอัปเดต', 'ၵူတ်ႇသွၵ်ႈဝႃးသျိၼ်းမႂ်ႇ'),
+                ('Download and Install Update', 'ดาวน์โหลดและติดตั้งการอัปเดต', 'လူတ်ႇလႄႈတိတ်းတင်ႈဝႃးသျိၼ်းမႂ်ႇ'),
+            ]
+            self.buttons['check'].setText(labels[0][lang])
+            self.buttons['update'].setText(labels[1][lang])
+            self.buttons['download'].hide()
+            self.buttons['install'].hide()
+            self.buttons['check'].show()
+            self.buttons['update'].show()
+            self.note.setText([
+                'Check for Updates checks the latest release. Download and Install Update downloads a newer version and launches its installer.',
+                'ปุ่มตรวจสอบจะค้นหารุ่นล่าสุด ส่วนปุ่มดาวน์โหลดและติดตั้งจะดาวน์โหลดรุ่นใหม่และเปิดตัวติดตั้งให้',
+                'ၵူတ်ႇတူၺ်းဝႃးသျိၼ်းမႂ်ႇ၊ ၸွမ်းၼင်ႇမီးဝႃးသျိၼ်းမႂ်ႇ တေလူတ်ႇလႄႈပိုတ်ႇ installer',
+            ][lang])
+        else:
+            for button in self.buttons.values():
+                button.show()
+            notes = ['note'] + (['pip_note'] if self.key == 'pyinstaller' else ['java_note'] if self.key == 'java' else [])
+            self.note.setText('\\n'.join(self.word(n) for n in notes))
+        for button in self.buttons.values():
+            button.setMinimumHeight(max(44, button.fontMetrics().height() + 24))
         self.buttons['install'].setEnabled(self.artifact is not None and self.worker is None)
-        notes=['note']+(['pip_note'] if self.key=='pyinstaller' else ['java_note'] if self.key=='java' else [])
-        self.note.setText('\n'.join(self.word(n) for n in notes));self.status.setText((self.word(self.state) if self.state in WORDS else self.state)+ ('\n'+self.detail if self.detail else ''))
+        self.status.setText((self.word(self.state) if self.state in WORDS else self.state) + ('\\n' + self.detail if self.detail else ''))
         self.fit_content()
     def configured(self):
         field={'launch4j':'tools/launch4jc','inno':'tools/ISCC','python':'tools/Python interpreter','pyinstaller':'tools/Python interpreter'}.get(self.key)
