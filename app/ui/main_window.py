@@ -445,6 +445,19 @@ class Window(QMainWindow):
     if hasattr(self, 'mac_tools_refresh'):
       self.mac_tools_refresh.setEnabled(is_macos)
 
+ def _check_pyinstaller(self):
+    """Check PyInstaller using the same Python 3 interpreter found on this Mac."""
+    python = shutil.which('python3')
+    if not python:
+      return 'Requires Python 3'
+    try:
+      result = subprocess.run([python, '-m', 'PyInstaller', '--version'],
+                              capture_output=True, text=True, timeout=5)
+      value = (result.stdout or result.stderr).strip()
+      return value if result.returncode == 0 and value else 'Not installed'
+    except (OSError, subprocess.SubprocessError):
+      return 'Not installed'
+
  def refresh_platform_tools(self):
     """Show local status for macOS prerequisites without installing anything silently."""
     if not hasattr(self, 'mac_tool_status'):
@@ -477,7 +490,7 @@ class Window(QMainWindow):
     rows = [
       'Java JDK / jpackage: ' + jdk,
       'Python 3: ' + check('python3'),
-      'PyInstaller: ' + ('Installed in selected Python' if check('python3') != 'Not installed' else 'Requires Python 3'),
+      'PyInstaller: ' + self._check_pyinstaller(),
       'Xcode Command Line Tools: ' + ('Installed' if Path('/Library/Developer/CommandLineTools').exists() or Path('/Applications/Xcode.app').exists() else 'Not detected'),
       'hdiutil (DMG): ' + ('Available' if Path('/usr/bin/hdiutil').exists() else 'Not available'),
       'ICNS conversion: handled by ExeBuilderStudio when supported',
