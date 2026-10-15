@@ -57,3 +57,10 @@ The script uses PyInstaller to create `ExeBuilderStudio.app` with its Python run
 
 Bundling ExeBuilderStudio does not automatically bundle every target-project toolchain. Java JAR builds need a JDK 17+ with `jpackage` unless one is bundled; Python-project builds still need Python 3 on the Mac and may need internet access to install the target project's dependencies.
 
+
+
+## macOS in-app updates
+The macOS About tab includes Check for Updates. It checks the latest stable GitHub Release, selects a DMG for the current architecture (`arm64` or `x86_64`), downloads over HTTPS, verifies the GitHub SHA-256 digest, checks the DMG trailer, and opens the image for manual installation. Update `APP_VERSION` and `BUILD_REVISION` in `app/services/tool_downloads.py` for each release. For public distribution, use Developer ID signing and Apple notarization; this updater does not silently replace the running app.
+
+## Cross-platform in-app updates
+The About tab uses one updater UI on Windows and macOS. It detects the operating system automatically, downloads `ExeBuilderStudio_Setup.exe` on Windows, or selects a macOS DMG matching the current architecture (`arm64` or `x86_64`). It verifies the GitHub Release asset SHA-256 digest before launching the installer. Windows launches the verified setup and exits the app; macOS opens the verified DMG for manual replacement in Applications. This does not silently replace the running macOS app. For public distribution, use Developer ID signing and Apple notarization.

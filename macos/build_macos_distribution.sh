@@ -98,7 +98,12 @@ STAGE="$BUILD_ROOT/stage"
 rm -rf "$STAGE"
 mkdir -p "$STAGE"
 /usr/bin/ditto "$APP" "$STAGE/ExeBuilderStudio.app"
-DMG="$RELEASE/ExeBuilderStudio-1.1-macOS-$ARCH.dmg"
+VERSION="${APP_VERSION:-$(sed -n "s/^APP_VERSION = '\\([^']*\\)'.*/\\1/p" "$ROOT/app/services/tool_downloads.py" | head -n 1)}"
+if [[ -z "$VERSION" ]]; then
+  echo "Could not determine APP_VERSION from app/services/tool_downloads.py" >&2
+  exit 1
+fi
+DMG="$RELEASE/ExeBuilderStudio-$VERSION-macOS-$ARCH.dmg"
 rm -f "$DMG"
 
 # Prefer create-dmg for a polished drag-and-drop window when it is installed.
@@ -117,7 +122,7 @@ if command -v create-dmg >/dev/null 2>&1; then
 else
   echo "create-dmg is not installed; using macOS hdiutil fallback."
   ln -s /Applications "$STAGE/Applications"
-  /usr/bin/hdiutil create -volname "ExeBuilderStudio 1.1" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
+  /usr/bin/hdiutil create -volname "ExeBuilderStudio $VERSION" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
 fi
 
 # Emit a checksum for users to verify the downloaded release file.

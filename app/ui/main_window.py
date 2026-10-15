@@ -11,6 +11,7 @@ from backend import *
 from app.services.macos_builder import create_macos_build_kit
 from app.services.windows_native_builder import build_windows_installer, resolve_jdk_home
 from app.services.jdk_manager import discover_jdk_homes, validate_jdk_home
+from app.services.universal_updates import UniversalUpdateCard
 from download_ui import add_tool_card, add_about_updater, translate_downloads
 from tool_downloads import APP_VERSION, BUILD_REVISION
 from ui_assets import resource, load_fonts, apply_font, FAMILIES, FONT_ERRORS
@@ -247,11 +248,12 @@ class Window(QMainWindow):
     else:
       for key in ['java','inno','python','pyinstaller']:
         add_tool_card(self,key,self.pages['tools'])
-    about=QWidget(); box=QVBoxLayout(about); logo=QLabel(); logo.setPixmap(QPixmap(str(resource('logo.png'))).scaled(140,140,Qt.KeepAspectRatio,Qt.SmoothTransformation)); box.addWidget(logo); self.about_text=QLabel(); self.about_text.setWordWrap(True); box.addWidget(self.about_text); self.mac_update_note=None
-    if sys.platform == 'darwin':
-      self.mac_update_note=QLabel(); self.mac_update_note.setWordWrap(True); box.addWidget(self.mac_update_note)
-    else:
-      add_about_updater(self,box)
+    # Preserve the original About content and its existing Windows updater controls.
+    # Append the cross-platform updater below the original card instead of replacing it.
+    about=QWidget(); box=QVBoxLayout(about); logo=QLabel(); logo.setPixmap(QPixmap(str(resource('logo.png'))).scaled(140,140,Qt.KeepAspectRatio,Qt.SmoothTransformation)); box.addWidget(logo); self.about_text=QLabel(); self.about_text.setWordWrap(True); box.addWidget(self.about_text); self.mac_update_note=None; self.mac_update_card=None
+    if os.name == 'nt':
+      add_about_updater(self, box)
+    self.update_card=UniversalUpdateCard(); box.addWidget(self.update_card)
     box.addStretch(); about_scroll=QScrollArea(); about_scroll.setWidgetResizable(True); about_scroll.setWidget(about); self.about_index=self.tabs.addTab(about_scroll,'About')
     self.status=QLabel(); layout.addWidget(self.status)
     # Show a horizontal progress bar and current build phase so long builds feel responsive.
@@ -407,18 +409,24 @@ class Window(QMainWindow):
     self.jdk_label.setText(['JDK used for Java builds (JDK 17 or newer)', 'JDK ที่ใช้สร้างตัวติดตั้ง Java (JDK 17 ขึ้นไป)', 'JDK ဢၼ်ၸႂ်ႉသၢင်ႈ Java (JDK 17 ၶိုၼ်ႈၵႂႃႇ)'][i])
     self.jdk_refresh.setText(['Refresh JDK list', 'ค้นหา JDK อีกครั้ง', 'ၵူတ်ႇ JDK ထႅင်ႈ'][i])
     self.jdk_browse.setText(['Browse JDK folder…', 'เลือกโฟลเดอร์ JDK…', 'လိူၵ်ႈၾူဝ်ႇလ်ႇတိူဝ်ႇ JDK…'][i])
+    # Restore the original About text; keep the original Windows updater and
+    # append the cross-platform updater below it.
+    about_lines = [
+      f'EXE Builder Studio • Version {APP_VERSION}\\nDeveloped by Khurkham Langkhur\\nJava / Python EXE, Inno Setup, ICO\\nEmbedded fonts: ' + ' / '.join(FAMILIES.values()),
+      f'EXE Builder Studio • เวอร์ชัน {APP_VERSION}\\nพัฒนาโดย Khurkham Langkhur\\nสร้าง EXE จาก Java / Python สร้างตัวติดตั้ง และแปลง ICO\\nฟอนต์ที่ฝัง: ' + ' / '.join(FAMILIES.values()),
+      f'EXE Builder Studio • ဝႃးသျိၼ်း {APP_VERSION}\\nၽူႈသၢင်ႈ Khurkham Langkhur\\nJava / Python EXE, Inno Setup, ICO\\nၾွၼ်ႉ: ' + ' / '.join(FAMILIES.values()),
+    ]
+    self.about_text.setText(about_lines[i])
     if self.mac_tools_note is not None:
       self.mac_tools_note.setText([
         'macOS edition: the app runtime is bundled. Java builds need a full JDK 17+ with jpackage. Python-project builds need Python 3 on this Mac and may need internet to install project dependencies.',
         'รุ่น macOS รวม Runtime ของตัวโปรแกรมไว้แล้ว การสร้าง Java ต้องมี Full JDK 17+ ที่มี jpackage ส่วนการสร้างโปรเจกต์ Python ต้องมี Python 3 บน Mac และอาจต้องใช้อินเทอร์เน็ตเพื่อติดตั้ง Dependencies',
         'macOS ဝႃးသျိၼ်းၼႆႉ Bundle runtime ပရူဝ်ႇၵရမ်ႇဝႆႉ။ Java တေလူဝ်ႇ Full JDK 17+ ဢၼ်မီး jpackage။ Python project တေလူဝ်ႇ Python 3 လႄႈ ၸၢင်ႈလူဝ်ႇ Internet တႃႇတိတ်းတင်ႈ Dependencies'
       ][i])
-    if self.mac_update_note is not None:
-      self.mac_update_note.setText([
-        'macOS updates are distributed as a separate DMG. The Windows EXE updater is disabled in this app.',
-        'เวอร์ชัน macOS แจกจ่ายเป็นไฟล์ DMG แยกต่างหาก จึงปิดตัวอัปเดต EXE ของ Windows ในแอปนี้',
-        'macOS ဝႃးသျိၼ်းမႂ်ႇ တေၸႅၵ်ႇပၼ်ၼႂ်းၾၢႆႇ DMG။ ပိၵ်ႉ Windows EXE updater ဝႆႉ'
-      ][i])
+    # Keep the original updater card translated as well as the new cross-platform card.
+    translate_downloads(self)
+    if getattr(self, 'update_card', None) is not None:
+      self.update_card.set_language(i)
  # Persist normal UI settings and clear obsolete settings from older versions.
  def save_settings(self):
     for key,w in self.fields.items():
