@@ -225,6 +225,12 @@ class Window(QMainWindow):
       self.fields['tools/'+key]=edit
     self.tools_intro=QLabel(); self.tools_intro.setWordWrap(True)
     self.pages['win_tools'].addRow(self.tools_intro)
+    self.win_tool_rows = {}
+    for tool_key, tool_title in [('wix', 'WiX Toolset (optional)'), ('ico', 'ICO icon conversion')]:
+      value = QLabel('Checking…')
+      value.setWordWrap(True)
+      self.win_tool_rows[tool_key] = value
+      self.pages['win_tools'].addRow(tool_title + ':', value)
     # Let users explicitly choose which installed JDK is used for Java installer builds.
     self.jdk_selector = QComboBox()
     self.jdk_selector.setMinimumContentsLength(28)
@@ -469,7 +475,16 @@ class Window(QMainWindow):
       return 'Not installed'
 
  def refresh_platform_tools(self):
-    """Show local status for macOS prerequisites without installing anything silently."""
+    """Show local status for platform tools without installing anything silently."""
+    if hasattr(self, 'win_tool_rows'):
+      wix = shutil.which('wix') or shutil.which('wix.exe') or shutil.which('candle.exe')
+      self.win_tool_rows['wix'].setText('Installed: ' + wix if wix else 'Optional; not detected')
+      try:
+        import PIL.Image
+        ico_status = 'Available (Pillow)'
+      except Exception:
+        ico_status = 'Built-in conversion when supported; Pillow not detected'
+      self.win_tool_rows['ico'].setText(ico_status)
     if not hasattr(self, 'mac_tool_rows'):
       return
     def check(command):
