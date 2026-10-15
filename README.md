@@ -1,4 +1,4 @@
-# ExeBuilderStudio 1.2
+# ExeBuilderStudio 1.1
 
 A desktop app for building native Windows and macOS installers, with English, Thai, and Shan UI.
 
