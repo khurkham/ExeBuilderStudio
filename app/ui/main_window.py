@@ -190,7 +190,7 @@ class BuildWorker(QObject):
 
 class Window(QMainWindow):
  def __init__(self):
-    super().__init__(); self.settings=QSettings('Khurkham','ExeBuilderStudio'); self.labels=[]; self.fields={}; self.last_output=''; self.busy=False; self.tool_cards=[]; self.active_download=None
+    super().__init__(); self.settings=QSettings('Khurkham','ExeBuilderStudio'); self.labels=[]; self.field_labels=[]; self.browse_buttons=[]; self.fields={}; self.last_output=''; self.busy=False; self.tool_cards=[]; self.active_download=None
     self.resize(1080,820); root=QWidget(); self.setCentralWidget(root); layout=QVBoxLayout(root)
     head=QHBoxLayout(); self.logo=QLabel(); self.logo.setPixmap(QPixmap(str(resource("logo.png"))).scaled(64,64,Qt.KeepAspectRatio,Qt.SmoothTransformation)); self.logo.setFixedSize(72,72); head.addWidget(self.logo); self.setWindowIcon(QIcon(str(resource("app.icns" if sys.platform == "darwin" and resource("app.icns").is_file() else "app.ico")))); self.title=QLabel(); head.addWidget(self.title); head.addStretch(); self.lang=QComboBox(); self.lang.addItems(['English','ไทย','တႆး']); self.lang.setCurrentIndex(int(self.settings.value('language',1))); head.addWidget(self.lang); layout.addLayout(head)
     # Main workflow tabs are grouped by target platform and task.
@@ -214,7 +214,7 @@ class Window(QMainWindow):
     # Logo converter supports both Windows ICO and macOS ICNS formats.
     self.field('icon','source',kind='image'); self.field('icon','output',kind='dir'); self.field('icon','name',default='app')
     self.icon_format = QComboBox(); self.icon_format.addItems(['Windows desktop icon (.ico)', 'macOS desktop icon (.icns)'])
-    self.pages['icon'].addRow(QLabel('Output icon format'), self.icon_format)
+    self.icon_format_label = QLabel(); self.pages['icon'].addRow(self.icon_format_label, self.icon_format)
     self.button('icon','convert',self.make_icon)
     # Keep tool paths internally for automatic detection and existing build services.
     # Users no longer need to edit executable paths manually.
@@ -230,11 +230,11 @@ class Window(QMainWindow):
     # Let users explicitly choose which installed JDK is used for Java installer builds.
     self.jdk_selector = QComboBox()
     self.jdk_selector.setMinimumContentsLength(28)
-    self.jdk_refresh = QPushButton('Refresh JDK list')
-    self.jdk_browse = QPushButton('Browse JDK folder…')
+    self.jdk_refresh = QPushButton()
+    self.jdk_browse = QPushButton()
     jdk_row = QWidget(); jdk_layout = QHBoxLayout(jdk_row); jdk_layout.setContentsMargins(0, 0, 0, 0)
     jdk_layout.addWidget(self.jdk_selector, 1); jdk_layout.addWidget(self.jdk_refresh); jdk_layout.addWidget(self.jdk_browse)
-    self.jdk_label = QLabel('JDK used for Java builds (JDK 17 or newer)')
+    self.jdk_label = QLabel()
     self.pages['win_tools'].addRow(self.jdk_label, jdk_row)
     self.jdk_selector.currentIndexChanged.connect(self.persist_jdk_selection)
     self.jdk_refresh.clicked.connect(self.refresh_jdk_choices)
@@ -245,10 +245,11 @@ class Window(QMainWindow):
       add_tool_card(self,key,self.pages['win_tools'])
     self.win_tool_rows = {}
     for tool_key, tool_title in [('wix', 'WiX Toolset (optional)'), ('ico', 'ICO icon conversion')]:
-      value = QLabel('Checking…'); value.setWordWrap(True)
+      value = QLabel(); value.setWordWrap(True)
       self.win_tool_rows[tool_key] = value
       self.pages['win_tools'].addRow(tool_title + ':', value)
-    # macOS tools have a local status row and explicit official-download/help action.
+    # Show only build prerequisites here. hdiutil is built into macOS, and icon conversion
+    # is handled by the separate Logo -> ICO / ICNS tab, so neither needs a row here.
     self.mac_tools_note = QLabel(); self.mac_tools_note.setWordWrap(True)
     self.pages['mac_tools'].addRow(self.mac_tools_note)
     self.mac_tool_rows = {}
@@ -257,23 +258,23 @@ class Window(QMainWindow):
       'python': ('Python 3', 'https://www.python.org/downloads/macos/'),
       'pyinstaller': ('PyInstaller', 'https://pyinstaller.org/en/stable/installation.html'),
       'xcode': ('Xcode Command Line Tools', 'https://developer.apple.com/xcode/resources/'),
-      'hdiutil': ('hdiutil (DMG)', 'https://support.apple.com/guide/terminal/welcome/mac'),
-      'icns': ('ICNS conversion', 'https://pillow.readthedocs.io/en/stable/'),
     }
     self.mac_tools_check_buttons = []
+    self.mac_tools_download_buttons = []
     for tool_key, (tool_title, url) in self.mac_tool_links.items():
-      status = QLabel('Not checked yet'); status.setWordWrap(True)
+      status = QLabel(); status.setWordWrap(True)
       self.mac_tool_rows[tool_key] = status
       actions = QWidget(); actions_layout = QHBoxLayout(actions); actions_layout.setContentsMargins(0, 0, 0, 0)
-      check_button = QPushButton('Check')
+      check_button = QPushButton()
       check_button.clicked.connect(lambda checked=False, k=tool_key: self.check_mac_tool(k))
-      download_button = QPushButton('Download / Help')
+      download_button = QPushButton()
       download_button.clicked.connect(lambda checked=False, u=url: QDesktopServices.openUrl(QUrl(u)))
       actions_layout.addWidget(check_button); actions_layout.addWidget(download_button)
       self.mac_tools_check_buttons.append(check_button)
+      self.mac_tools_download_buttons.append(download_button)
       self.pages['mac_tools'].addRow(tool_title + ':', status)
       self.pages['mac_tools'].addRow(actions)
-    self.mac_tools_refresh = QPushButton('Check all macOS tools')
+    self.mac_tools_refresh = QPushButton()
     self.mac_tools_refresh.clicked.connect(self.refresh_platform_tools)
     self.pages['mac_tools'].addRow(self.mac_tools_refresh)
     self.refresh_platform_tools()
@@ -295,7 +296,7 @@ class Window(QMainWindow):
     box.addStretch(); about_scroll=QScrollArea(); about_scroll.setWidgetResizable(True); about_scroll.setWidget(about); self.about_index=self.tabs.addTab(about_scroll,'About')
     self.status=QLabel(); layout.addWidget(self.status)
     # Show a horizontal progress bar and current build phase so long builds feel responsive.
-    self.progress_detail=QLabel('Ready')
+    self.progress_detail=QLabel()
     layout.addWidget(self.progress_detail)
     self.build_progress=QProgressBar(); self.build_progress.setRange(0,100); self.build_progress.setValue(0)
     # Keep the bar itself text-free: Qt may localize its built-in percentage digits.
@@ -328,21 +329,24 @@ class Window(QMainWindow):
     edit = QLineEdit(str(default))
     edit.setClearButtonEnabled(True)
     self.fields[f'{page}/{key}'] = edit
+    label_widget = QLabel(label_text)
+    self.field_labels.append((label_widget, label_key))
     if kind in ('file', 'project', 'dir', 'image'):
       browse = QPushButton(T['browse'][self.lang.currentIndex() if hasattr(self, 'lang') else 0])
+      self.browse_buttons.append(browse)
       browse.clicked.connect(lambda checked=False, e=edit, k=kind, title=label_text: self.browse_field(e, k, title))
       row = QWidget(); row_layout = QHBoxLayout(row); row_layout.setContentsMargins(0,0,0,0); row_layout.addWidget(edit, 1); row_layout.addWidget(browse)
-      self.pages[page].addRow(label_text, row)
+      self.pages[page].addRow(label_widget, row)
     else:
-      self.pages[page].addRow(label_text, edit)
+      self.pages[page].addRow(label_widget, edit)
     return edit
 
  # Open the appropriate native picker based on the selected field type.
  def browse_field(self, edit, kind, title):
     if kind == 'project':
-      choice = QMessageBox(self); choice.setWindowTitle('Select Python source'); choice.setText('Choose a Python entry file or the whole project folder.')
-      file_button = choice.addButton('Python file (.py)', QMessageBox.AcceptRole)
-      folder_button = choice.addButton('Project folder', QMessageBox.ActionRole)
+      choice = QMessageBox(self); choice.setWindowTitle(T['select_python_source'][self.lang.currentIndex()]); choice.setText(T['choose_python_source'][self.lang.currentIndex()])
+      file_button = choice.addButton(T['python_file'][self.lang.currentIndex()], QMessageBox.AcceptRole)
+      folder_button = choice.addButton(T['project_folder'][self.lang.currentIndex()], QMessageBox.ActionRole)
       choice.addButton(QMessageBox.Cancel); choice.exec()
       clicked = choice.clickedButton()
       if clicked == file_button:
@@ -488,31 +492,31 @@ class Window(QMainWindow):
        if p.is_file(): return str(p)
     return ''
  def translate(self):
-    i=self.lang.currentIndex(); self.settings.setValue('language',i); self.setWindowTitle(T['title'][i]); self.title.setText(T['title'][i]+' • '+APP_VERSION); self.title.setStyleSheet('font-size:26px; color:#7dcfff;')
+    i=self.lang.currentIndex(); self.settings.setValue('language',i); self.icon_format_label.setText(T['icon_format'][i]); self.progress_detail.setText(T['ready_status'][i]); self.setWindowTitle(T['title'][i]); self.title.setText(T['title'][i]+' • '+APP_VERSION); self.title.setStyleSheet('font-size:26px; color:#7dcfff;')
     apply_font(self,i)
     for widget,key in self.labels: widget.setText(T.get(key,(key,key,key))[i])
+    for widget,key in self.field_labels: widget.setText(T.get(key,(key,key,key))[i])
+    for button in self.browse_buttons: button.setText(T['browse'][i])
     for j,key in enumerate(self.pages): self.tabs.setTabText(j,T[key][i])
-    self.tools_intro.setText([
-      'Build native installers only on their target operating system. Windows builds *_Setup.exe; macOS builds *_Setup.dmg. No cloud build, GitHub repository, or token is required. Launch4j is not required.',
-      'ให้สร้างตัวติดตั้งบนระบบปฏิบัติการเป้าหมายเท่านั้น: Windows สร้าง *_Setup.exe และ Mac สร้าง *_Setup.dmg ไม่ใช้ Cloud Build, GitHub Repository หรือ Token และไม่จำเป็นต้องใช้ Launch4j',
-      'သၢင်ႈ installer ၼိူဝ် OS ဢၼ်မႅၼ်ႈၵၼ်ၵူၺ်း: Windows သၢင်ႈ *_Setup.exe၊ Mac သၢင်ႈ *_Setup.dmg။ ဢမ်ႇၸႂ်ႉ Cloud Build၊ GitHub Repository၊ ဢမ်ႇလူဝ်ႇ Launch4j'
-    ][self.lang.currentIndex()])
-    self.jdk_label.setText(['JDK used for Java builds (JDK 17 or newer)', 'JDK ที่ใช้สร้างตัวติดตั้ง Java (JDK 17 ขึ้นไป)', 'JDK ဢၼ်ၸႂ်ႉသၢင်ႈ Java (JDK 17 ၶိုၼ်ႈၵႂႃႇ)'][i])
-    self.jdk_refresh.setText(['Refresh JDK list', 'ค้นหา JDK อีกครั้ง', 'ၸႅတ်ႈထတ်း JDK ထႅင်ႈ'][i])
-    self.jdk_browse.setText(['Browse JDK folder…', 'เลือกโฟลเดอร์ JDK…', 'လိူၵ်ႈၾူဝ်ႇလ်ႇတိူဝ်ႇ JDK…'][i])
-    self.mac_tools_note.setText([
-      'macOS prerequisites are listed separately. Use Check to inspect this Mac and Download / Help to open the official vendor page. hdiutil is built into macOS; Xcode tools are only needed by some dependencies.',
-      'รายการเครื่องมือ macOS แยกไว้ด้านล่าง กดตรวจสอบเพื่อตรวจบน Mac และกดดาวน์โหลด/คู่มือเพื่อเปิดเว็บไซต์ทางการ hdiutil มีมากับ macOS ส่วน Xcode จำเป็นเฉพาะบาง Dependencies',
-      'macOS ၶိူင်ႈမိုဝ်းၸႅၵ်ႇဝႆႉတၢင်းတႂ်ႈ။ ၸႅတ်ႈထတ်းတႃႇတူၺ်းၼိူဝ် Mac၊ Download / Help တေပိုတ်ႇဝႅပ်ႉတၢင်းၵၢၼ်။ hdiutil မီးမႃးၸွမ်း macOS'
-    ][i])
-    self.mac_tools_refresh.setText(['Check all macOS tools', 'ตรวจสอบเครื่องมือ macOS ทั้งหมด', 'ၸႅတ်ႈထတ်းၶိူင်ႈမိုဝ်း macOS တင်းသဵင်ႈ'][i])
+    for value in getattr(self, 'win_tool_rows', {}).values():
+      if not value.text() or value.text() == 'Checking…': value.setText(T['checking'][i])
+    for value in getattr(self, 'mac_tool_rows', {}).values():
+      if not value.text() or value.text() == 'Not checked yet': value.setText(T['not_checked'][i])
+    for card in getattr(self, 'tool_cards', []): card.translate()
+    self.tools_intro.setText(T['tools_intro'][i])
+    self.jdk_label.setText(T['jdk_label'][i])
+    self.jdk_refresh.setText(T['refresh_jdk'][i])
+    self.jdk_browse.setText(T['browse_jdk'][i])
+    self.mac_tools_note.setText(T['mac_tools_note'][i])
+    self.mac_tools_refresh.setText(T['mac_tools_refresh'][i])
     for button in self.mac_tools_check_buttons:
-      button.setText(['Check', 'ตรวจสอบ', 'ၸႅတ်ႈထတ်း'][i])
-    self.about_text.setText([
-      f'EXE Builder Studio • Version {APP_VERSION}\nDeveloped by Khurkham Langkhur\nJava / Python EXE, Inno Setup, ICO\nEmbedded fonts: TH Sarabun New / A J Kunheing E-T-M 05',
-      f'EXE Builder Studio • เวอร์ชัน {APP_VERSION}\nผู้พัฒนา: Khurkham Langkhur\nJava / Python EXE, Inno Setup, ICO\nฟอนต์ที่ฝัง: TH Sarabun New / A J Kunheing E-T-M 05',
-      f'EXE Builder Studio • ဝႃးသျိၼ်း {APP_VERSION}\nၽူႈသၢင်ႈ: Khurkham Langkhur\nJava / Python EXE, Inno Setup, ICO\nၾွၼ်ႉ: TH Sarabun New / A J Kunheing E-T-M 05'
-    ][i])
+      button.setText(T['check'][i])
+    download_labels = T.get('download_help', (
+      'Download / Help', 'ดาวน์โหลด / วิธีใช้', 'လူတ်ႇ / ၵၢၼ်ၸွႆႈထႅမ်'
+    ))
+    for button in self.mac_tools_download_buttons:
+      button.setText(download_labels[i])
+    self.about_text.setText(T['about_text'][i].format(version=APP_VERSION))
     if self.mac_update_card is not None:
       self.mac_update_card.set_language(i)
     if getattr(self, 'universal_update_card', None) is not None:

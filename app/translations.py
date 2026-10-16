@@ -245,4 +245,37 @@ T = {
         'พร้อมใช้งาน • สร้าง EXE บน Windows',
         'တူဝ်ႈတၼ်း • သၢင်ႈ EXE ၼိူဝ် Windows',
     ),
+
+    # Additional controls, status messages, and dialogs
+    'icon_format': ('Output icon format', 'รูปแบบไฟล์ไอคอน', 'ဢၢင်ႇၾၢႆႇ icon'),
+    'checking': ('Checking…', 'กำลังตรวจสอบ…', 'တိုၵ်ႉၸႅတ်ႈထတ်း…'),
+    'not_checked': ('Not checked yet', 'ยังไม่ได้ตรวจสอบ', 'ပႆႇၸႅတ်ႈထတ်း'),
+    'check': ('Check', 'ตรวจสอบ', 'ၸႅတ်ႈထတ်း'),
+    'download_help': ('Download / Help', 'ดาวน์โหลด / คู่มือ', 'လူတ်ႇ / ၵမ်ႉထႅမ်'),
+    'select_python_source': ('Select Python source', 'เลือกแหล่งไฟล์ Python', 'လိူၵ်ႈတီႈမႃး Python'),
+    'choose_python_source': ('Choose a Python entry file or the whole project folder.', 'เลือกไฟล์เริ่มต้น Python หรือทั้งโฟลเดอร์โปรเจกต์', 'လိူၵ်ႈၾၢႆႇ Python ဢၼ်တႄႇႁဵတ်းၵၢၼ် ဢမ်ႇၼၼ်ၾူဝ်ႇလ်ႇတိူဝ်ႇ project တင်းမူတ်း'),
+    'python_file': ('Python file (.py)', 'ไฟล์ Python (.py)', 'ၾၢႆႇ Python (.py)'),
+    'project_folder': ('Project folder', 'โฟลเดอร์โปรเจกต์', 'ၾူဝ်ႇလ်ႇတိူဝ်ႇ project'),
+    'ready_status': ('Ready', 'พร้อมใช้งาน', 'တူဝ်ႈတၼ်း'),
+    'failed_status': ('Failed', 'ไม่สำเร็จ', 'ဢမ်ႇယဝ်ႉ'),
+    'running_status': ('Running…', 'กำลังทำงาน…', 'တိုၵ်ႉႁဵတ်းၵၢၼ်…'),
+    'refresh_jdk': ('Refresh JDK list', 'ค้นหา JDK อีกครั้ง', 'ၸႅတ်ႈထတ်း JDK ထႅင်ႈ'),
+    'browse_jdk': ('Browse JDK folder…', 'เลือกโฟลเดอร์ JDK…', 'လိူၵ်ႈၾူဝ်ႇလ်ႇတိူဝ်ႇ JDK…'),
+    'jdk_label': ('JDK used for Java builds (JDK 17 or newer)', 'JDK ที่ใช้สร้างตัวติดตั้ง Java (JDK 17 ขึ้นไป)', 'JDK ဢၼ်ၸႂ်ႉသၢင်ႈ Java (JDK 17 ၶိုၼ်ႈၵႂႃႇ)'),
+    'mac_tools_refresh': ('Check all macOS tools', 'ตรวจสอบเครื่องมือ macOS ทั้งหมด', 'ၸႅတ်ႈထတ်းၶိူင်ႈမိုဝ်း macOS တင်းသဵင်ႈ'),
+    'tools_intro': (
+        'Build native installers only on their target operating system. Windows builds *_Setup.exe; macOS builds *_Setup.dmg. No cloud build, GitHub repository, or token is required. Launch4j is not required.',
+        'สร้างตัวติดตั้งบนระบบปฏิบัติการเป้าหมายเท่านั้น: Windows สร้าง *_Setup.exe และ macOS สร้าง *_Setup.dmg ไม่ต้องใช้ Cloud Build, GitHub Repository หรือ Token และไม่จำเป็นต้องใช้ Launch4j',
+        'သၢင်ႈ installer ၼိူဝ် OS ဢၼ်မႅၼ်ႈၵၼ်ၵူၺ်း: Windows သၢင်ႈ *_Setup.exe၊ macOS သၢင်ႈ *_Setup.dmg။ ဢမ်ႇလူဝ်ႇ Cloud Build၊ GitHub Repository ႁိုဝ် Token၊ လႄႈ ဢမ်ႇလူဝ်ႇ Launch4j။'
+    ),
+    'mac_tools_note': (
+        'macOS prerequisites are listed below. Use Check to inspect this Mac and Download / Help to open the official vendor page. hdiutil is built into macOS; Xcode tools are needed only by some dependencies.',
+        'รายการเครื่องมือ macOS อยู่ด้านล่าง กดตรวจสอบเพื่อตรวจบน Mac และกดดาวน์โหลด / คู่มือเพื่อเปิดเว็บไซต์ทางการ hdiutil มีมากับ macOS ส่วน Xcode จำเป็นเฉพาะบางแพ็กเกจ',
+        'macOS ၶိူင်ႈမိုဝ်းဢၼ်လူဝ်ႇၸႂ်ႉ မီးဝႆႉတၢင်းတႂ်ႈ။ ၶိုၼ်းၼဵၵ်းၸႅတ်ႈထတ်းတႃႇတူၺ်းၼိူဝ် Mac၊ လူတ်ႇ / ၵမ်ႉထႅမ် တေပိုတ်ႇဝႅပ်ႉၸဝ်ႈၶွင်။ hdiutil မီးမႃးၸွမ်း macOS၊ Xcode လူဝ်ႇၸႂ်ႉၵူၺ်းၼႂ်း package ၵမ်ႈၽွင်ႈ။'
+    ),
+    'about_text': (
+        'EXE Builder Studio • Version {version}\nDeveloped by Khurkham Langkhur\nJava / Python EXE, Inno Setup, ICO\nEmbedded fonts: TH Sarabun New / A J Kunheing E-T-M 05',
+        'EXE Builder Studio • เวอร์ชัน {version}\nผู้พัฒนา: Khurkham Langkhur\nJava / Python EXE, Inno Setup, ICO\nฟอนต์ที่ฝัง: TH Sarabun New / A J Kunheing E-T-M 05',
+        'EXE Builder Studio • ဝႃးသျိၼ်း {version}\nၽူႈၶူင်သၢင်ႈ: Khurkham Langkhur\nJava / Python EXE, Inno Setup, ICO\nၾွၼ်ႉ: TH Sarabun New / A J Kunheing E-T-M 05'
+    ),
 }
