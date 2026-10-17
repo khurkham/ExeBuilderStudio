@@ -1,4 +1,4 @@
-# ExeBuilderStudio 1.1
+# ExeBuilderStudio 1.2
 
 A desktop app for building native Windows and macOS installers, with English, Thai, and Shan UI.
 
@@ -19,7 +19,7 @@ Choose a JAR or Python entry file/project folder, output folder, app name, and o
 
 ### Choose the JDK version used for builds
 
-In **Tools / Java**, use **JDK used for Java builds** to select an installed JDK (for example 17, 21, or 25). Click **Refresh JDK list** to rescan the machine, or **Browse JDK folder…** to choose a JDK home manually. Select the JDK root containing `bin/jpackage.exe` on Windows or `bin/jpackage` on macOS. JDK 17 or newer is required. Auto-detect lets the app search for an installed JDK automatically.
+The app automatically searches for an installed JDK (17 or newer) when a Java build starts. Install a full JDK that includes `jpackage` if one is not detected. On Windows, the expected executable is `bin/jpackage.exe`; on macOS, it is `bin/jpackage`. The tool-management tabs are hidden from the main UI, while tool detection and build support remain available in the background.
 
 ### If the app says JDK or jpackage was not found
 
@@ -36,21 +36,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Build_Studio.ps1 -CreateIn
 ```
 
 This requires Python and Inno Setup on the build machine. The installer is written to `installer_output`.
-
-## GitHub Releases and macOS in-app updates
-
-Published releases should use matching version numbers across Windows and macOS. The Windows installer remains `ExeBuilderStudio_Setup.exe`; the macOS updater looks for a DMG asset whose filename includes both `macOS` and the current Mac architecture, for example `ExeBuilderStudio-1.1-macOS-arm64.dmg` or `ExeBuilderStudio-1.1-macOS-x86_64.dmg`.
-
-On macOS, open **About → Check for Updates**. The app checks the latest stable public GitHub Release, downloads the matching DMG over HTTPS, verifies its SHA-256 digest against GitHub's release asset metadata, and opens the disk image. The current build is not code-signed or notarized, so it does not silently replace a running app: quit ExeBuilderStudio and drag the new app into Applications, choosing Replace when prompted.
-
-### Publishing a release
-
-1. Update `APP_VERSION` and `BUILD_REVISION` in `app/services/tool_downloads.py` and test the Windows build.
-2. Run **Windows installer release (manual only)** from GitHub Actions to publish the Windows Setup EXE and create the versioned GitHub Release if needed.
-3. Run **Temporary macOS DMG release (run once)** from GitHub Actions to build the native DMG, upload it and its SHA-256 sidecar to that same release, and remove the temporary macOS workflow after successful publication.
-4. Verify both assets are present in the same GitHub Release. The Windows and macOS updater each select the matching installer asset for their platform.
-
-GitHub Actions workflows are manual-only; pushing code does not trigger a build. The macOS release workflow is intended to be temporary and self-removes after a successful publish. The Windows workflow remains available for manual releases. A public GitHub repository using standard GitHub-hosted runners is generally eligible for free Actions usage, but check the account's current plan and billing page before running.
 
 ## Tests and limitations
 
@@ -72,3 +57,19 @@ The script uses PyInstaller to create `ExeBuilderStudio.app` with its Python run
 
 Bundling ExeBuilderStudio does not automatically bundle every target-project toolchain. Java JAR builds need a JDK 17+ with `jpackage` unless one is bundled; Python-project builds still need Python 3 on the Mac and may need internet access to install the target project's dependencies.
 
+
+
+## macOS in-app updates
+The macOS About tab includes Check for Updates. It checks the latest stable GitHub Release, selects a DMG for the current architecture (`arm64` or `x86_64`), downloads over HTTPS, verifies the GitHub SHA-256 digest, checks the DMG trailer, and opens the image for manual installation. Update `APP_VERSION` and `BUILD_REVISION` in `app/services/tool_downloads.py` for each release. This project build is not code-signed or notarized; the updater does not silently replace the running app.
+
+### About-page updates
+The original About content and its existing platform-specific card are retained. The cross-platform updater is appended below them; it detects Windows/macOS and selects the matching installer asset.
+
+
+## Installer packaging modes (prototype)
+
+Windows: `./Build_Studio.ps1 -CreateInstaller -Mode Standard` builds the standard installer. `./Build_Studio.ps1 -CreateInstaller -Mode Offline` requires the publisher-staged offline payloads described in `offline_tools/README.md` and fails if required payloads are missing.
+
+macOS: run `macos/build_macos_distribution.sh` for Standard mode. For Offline mode, set `EBS_INSTALLER_MODE=Offline`, `EBS_BUNDLE_JDK_HOME`, `EBS_OFFLINE_PYTHON_HOME`, and prepare the wheelhouse as described in `offline_tools/README.md`. The resulting filename indicates the mode.
+
+**Important:** this is a packaging-mode prototype, not yet a certification that every third-party Python project can build offline. User-project dependencies must also be available in the local wheelhouse, and the packaged Python runtime paths should be validated on clean Windows/macOS test machines before release.

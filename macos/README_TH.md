@@ -19,7 +19,7 @@
    bash macos/build_macos_distribution.sh
    ```
 
-4. ไฟล์ผลลัพธ์จะอยู่ใน `macos_release/` เช่น `ExeBuilderStudio-1.1-macOS-arm64.dmg` สำหรับ Apple Silicon หรือ `ExeBuilderStudio-1.1-macOS-x86_64.dmg` สำหรับ Intel Mac
+4. ไฟล์ผลลัพธ์จะอยู่ใน `macos_release/` เช่น `ExeBuilderStudio-Standard-1.2-macOS-arm64.dmg` สำหรับ Apple Silicon หรือ `ExeBuilderStudio-Standard-1.2-macOS-x86_64.dmg` สำหรับ Intel Mac
 5. ทดสอบเปิด `.app` จาก DMG บนเครื่อง Mac จริงก่อนแจกจ่าย
 
 หากติดตั้ง `create-dmg` ไว้ สคริปต์จะใช้เครื่องมือนี้จัดหน้าต่าง DMG ให้มีตำแหน่งไอคอนแอปและทางลัด Applications หากไม่มี จะใช้ `hdiutil` ซึ่งติดมากับ macOS อยู่แล้ว จึงไม่บังคับให้ติดตั้ง Homebrew หรือเครื่องมือเสริม
@@ -51,3 +51,11 @@ JDK จะถูกคัดลอกไปไว้ใน `ExeBuilderStudio.app
 ## หมายเหตุด้านความปลอดภัย
 
 สคริปต์นี้ไม่ได้เซ็นแอปและไม่ได้ส่งแอปไป Notarize ตามข้อกำหนดของผู้ใช้ ดังนั้น macOS อาจแสดงคำเตือนเมื่อเปิดแอปที่ดาวน์โหลดจากอินเทอร์เน็ต
+
+
+## ระบบตรวจสอบอัปเดต macOS
+ในแท็บ About ของรุ่น macOS มีเมนู Check for Updates ซึ่งตรวจสอบ Stable Release จาก GitHub และเลือก DMG ตามสถาปัตยกรรมเครื่อง (arm64 หรือ x86_64) โดยดาวน์โหลดผ่าน HTTPS ตรวจ SHA-256 และตรวจโครงสร้าง DMG ก่อนเปิดให้ผู้ใช้ติดตั้งด้วยตนเอง
+
+ตั้ง `APP_VERSION` และ `BUILD_REVISION` ใน `app/services/tool_downloads.py` ให้ตรงกับรุ่นที่กำลังเผยแพร่ทุกครั้ง และอัปโหลด DMG ของทั้งสองสถาปัตยกรรมใน Release เดียวกันหากต้องการรองรับ Mac ทั้งสองแบบ
+
+ข้อจำกัด: ระบบปัจจุบันยังเปิด DMG ให้ผู้ใช้ติดตั้งเอง ไม่ได้แทนที่แอปเดิมโดยอัตโนมัติ ตัวติดตั้งที่แจกจ่ายสู่สาธารณะควรผ่าน Apple Developer ID Code Signing และ Notarization ก่อนเผยแพร่

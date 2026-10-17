@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import os
 import re
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -11,8 +10,7 @@ from pathlib import Path
 
 def _jdk_executable(home: Path) -> Path:
     """Return the platform-specific jpackage path inside a JDK home."""
-    # sys.platform is patchable in cross-platform tests and reflects the target OS.
-    name = "jpackage.exe" if sys.platform == "win32" else "jpackage"
+    name = "jpackage.exe" if os.name == "nt" else "jpackage"
     return home / "bin" / name
 
 
@@ -58,15 +56,21 @@ def validate_jdk_home(home: str | Path, minimum_major: int = 17, executable_name
 
 
 def bundled_jdk_home() -> Path | None:
-    """Return the optional JDK bundled inside a packaged macOS app."""
-    if sys.platform != "darwin" or not getattr(sys, "frozen", False):
+    """Find an optional JDK shipped with a packaged app (macOS or Windows)."""
+    if not getattr(sys, "frozen", False):
         return None
     try:
-        # PyInstaller app executable lives in Contents/MacOS; tools live in Contents/Resources.
-        contents = Path(sys.executable).resolve().parent.parent
-        candidate = contents / "Resources" / "tools" / "jdk"
-        if _jdk_executable(candidate).is_file():
-            return candidate
+        executable = Path(sys.executable).resolve()
+        candidates: list[Path] = []
+        if sys.platform == "darwin":
+            # PyInstaller app executable lives in Contents/MacOS; tools live in Resources.
+            candidates.append(executable.parent.parent / "Resources" / "tools" / "jdk")
+        elif os.name == "nt":
+            # Inno Setup places optional offline payloads beside the app in tools/jdk.
+            candidates.append(executable.parent / "tools" / "jdk")
+        for candidate in candidates:
+            if _jdk_executable(candidate).is_file():
+                return candidate
     except OSError:
         pass
     return None

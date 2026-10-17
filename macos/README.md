@@ -19,7 +19,7 @@
    bash macos/build_macos_distribution.sh
    ```
 
-4. The output is in `macos_release/`, for example `ExeBuilderStudio-1.1-macOS-arm64.dmg` for Apple Silicon or `ExeBuilderStudio-1.1-macOS-x86_64.dmg` for Intel.
+4. The output is in `macos_release/`, for example `ExeBuilderStudio-Standard-1.2-macOS-arm64.dmg` for Apple Silicon or `ExeBuilderStudio-Standard-1.2-macOS-x86_64.dmg` for Intel.
 5. Test the app from the DMG on a real Mac before distributing it.
 
 When `create-dmg` is installed, the script uses it to place the app icon and Applications drop link in a styled DMG window. Otherwise, it falls back to macOS `hdiutil`; Homebrew and extra tools are not required.
