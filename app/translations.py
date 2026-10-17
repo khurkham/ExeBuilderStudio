@@ -40,27 +40,19 @@ T = {
     ),
     'win_java_note': (
         'Builds *_Setup.exe on Windows using JDK 17+ '
-        '(jpackage app-image) and Inno Setup. '
-        'PowerShell and WiX are not required.',
+        '(jpackage app-image) and Inno Setup. ',
         'สร้าง *_Setup.exe บน Windows ด้วย JDK 17+ '
-        '(jpackage app-image) และ Inno Setup '
-        'ไม่ต้องใช้ PowerShell หรือ WiX Toolset',
+        '(jpackage app-image) และ Inno Setup ',
         'သၢင်ႈ *_Setup.exe ၼိူဝ် Windows လူၺ်ႈ JDK 17+ '
-        '(jpackage app-image) လႄႈ Inno Setup။ '
-        'ဢမ်ႇလူဝ်ႇ PowerShell ဢမ်ႇၼၼ် WiX။',
+        '(jpackage app-image) လႄႈ Inno Setup။ ',
     ),
     'win_python_note': (
         'Builds *_Setup.exe on Windows using Python, '
-        'PyInstaller, and Inno Setup 6/7. '
-        'PowerShell is not required. Install PyInstaller '
-        'in the selected Python environment first.',
+        'PyInstaller, and Inno Setup 6/7. ',
         'สร้าง *_Setup.exe บน Windows ด้วย Python, '
-        'PyInstaller และ Inno Setup 6/7 ไม่ต้องใช้ PowerShell '
-        'ต้องติดตั้ง PyInstaller ใน Python ที่เลือกก่อน',
+        'PyInstaller และ Inno Setup 6/7',
         'သၢင်ႈ *_Setup.exe ၼိူဝ် Windows လူၺ်ႈ Python, '
-        'PyInstaller လႄႈ Inno Setup 6/7။ '
-        'ဢမ်ႇလူဝ်ႇ PowerShell။ '
-        'ဢိၼ်ႇသတေႃး PyInstaller ၼႂ်း Python ဢၼ်လိူၵ်ႈဝႆႉ။',
+        'PyInstaller လႄႈ Inno Setup 6/7။ ',
     ),
 
     # macOS build actions and descriptions
@@ -84,7 +76,7 @@ T = {
         'Requires a full JDK 17+ with jpackage.',
         'สร้าง *_Setup.dmg โดยตรงบน macOS '
         'ต้องมี JDK 17+ ที่มี jpackage',
-        'သၢင်ႈ *_Setup.dmg တူၵ်းၼိူဝ် macOS။ '
+        'သၢင်ႈ *_Setup.dmg ၵမ်းသိုဝ်ႈ ၼိူဝ် macOS။ '
         'လူဝ်ႇမီး JDK 17+ ဢၼ်မီး jpackage။',
     ),
     'mac_python_note': (
@@ -95,9 +87,9 @@ T = {
         'สร้าง *_Setup.dmg โดยตรงบน macOS ต้องมี Python 3 '
         'โดยติดตั้ง PyInstaller ในสภาพแวดล้อมแยก '
         'ควรตรวจ requirements.txt ว่ามีแพ็กเกจเฉพาะ Windows หรือไม่',
-        'သၢင်ႈ *_Setup.dmg တူၵ်းၼိူဝ် macOS။ '
-        'လူဝ်ႇ Python 3၊ PyInstaller တေဢိၼ်ႇသတေႃးၼႂ်း environment '
-        'ထုၵ်ႇလီၸႅတ်ႈ requirements.txt တႃႇ package Windows။',
+        'သၢင်ႈ *_Setup.dmg ၵမ်းသိုဝ်ႈ ၼိူဝ် macOS။ '
+        'လူဝ်ႇမီး Python 3၊ တေဢိၼ်ႇသတေႃး PyInstaller ၼႂ်း environment '
+        'ထုၵ်ႇလီၸႅတ်ႈ requirements.txt ဝႃႈၸွင်ႇမီး Windows-only packages။',
     ),
 
     # Common interface labels
@@ -111,10 +103,23 @@ T = {
         'โลโก้ → ICO / ICNS',
         'လူဝ်ႇၵူဝ်ႇ → ICO / ICNS',
     ),
+    'win_tools': ('Windows Tools / Java', 'เครื่องมือ Windows / Java', 'Windows ၶိူင်ႈမိုဝ်း / Java'),
+    'mac_tools': ('macOS Tools / Java', 'เครื่องมือ macOS / Java', 'macOS ၶိူင်ႈမိုဝ်း / Java'),
     'tools': (
         'Tools / Java',
         'เครื่องมือ / Java',
         'ၶိူင်ႈမိုဝ်း / Java',
+    ),
+
+    'win_tools': (
+        'Windows Tools / Java',
+        'เครื่องมือ Windows / Java',
+        'ၶိူင်ႈမိုဝ်း Windows / Java',
+    ),
+    'mac_tools': (
+        'macOS Tools / Java',
+        'เครื่องมือ macOS / Java',
+        'ၶိူင်ႈမိုဝ်း macOS / Java',
     ),
     'browse': (
         'Browse',
@@ -193,7 +198,7 @@ T = {
     'check': (
         'Check Java',
         'ตรวจ Java',
-        'ၵူတ်ႇထတ်း Java',
+        'ၸႅတ်ႈထတ်း Java',
     ),
     'installjava': (
         'Download / install Java',
@@ -231,5 +236,38 @@ T = {
         'Ready • Build on Windows',
         'พร้อมใช้งาน • สร้าง EXE บน Windows',
         'တူဝ်ႈတၼ်း • သၢင်ႈ EXE ၼိူဝ် Windows',
+    ),
+
+    # Additional controls, status messages, and dialogs
+    'icon_format': ('Output icon format', 'รูปแบบไฟล์ไอคอน', 'ပိူင်ၾၢႆႇ icon'),
+    'checking': ('Checking…', 'กำลังตรวจสอบ…', 'တိုၵ်ႉၸႅတ်ႈထတ်း…'),
+    'not_checked': ('Not checked yet', 'ยังไม่ได้ตรวจสอบ', 'ပႆႇၸႅတ်ႈထတ်း'),
+    'check': ('Check', 'ตรวจสอบ', 'ၸႅတ်ႈထတ်း'),
+    'download_help': ('Download / Help', 'ดาวน์โหลด / คู่มือ', 'လူတ်ႇ / ၵမ်ႉထႅမ်'),
+    'select_python_source': ('Select Python source', 'เลือกแหล่งไฟล์ Python', 'လိူၵ်ႈတီႈမႃး Python'),
+    'choose_python_source': ('Choose a Python entry file or the whole project folder.', 'เลือกไฟล์เริ่มต้น Python หรือทั้งโฟลเดอร์โปรเจกต์', 'လိူၵ်ႈၾၢႆႇ Python ဢၼ်တႄႇႁဵတ်းၵၢၼ် ဢမ်ႇၼၼ်ၾူဝ်ႇလ်ႇတိူဝ်ႇ project တင်းမူတ်း'),
+    'python_file': ('Python file (.py)', 'ไฟล์ Python (.py)', 'ၾၢႆႇ Python (.py)'),
+    'project_folder': ('Project folder', 'โฟลเดอร์โปรเจกต์', 'ၾူဝ်ႇလ်ႇတိူဝ်ႇ project'),
+    'ready_status': ('Ready', 'พร้อมใช้งาน', 'တူဝ်ႈတၼ်း'),
+    'failed_status': ('Failed', 'ไม่สำเร็จ', 'ဢမ်ႇယဝ်ႉ'),
+    'running_status': ('Running…', 'กำลังทำงาน…', 'တိုၵ်ႉႁဵတ်းၵၢၼ်…'),
+    'refresh_jdk': ('Refresh JDK list', 'ค้นหา JDK อีกครั้ง', 'ၸႅတ်ႈထတ်း JDK ထႅင်ႈ'),
+    'browse_jdk': ('Browse JDK folder…', 'เลือกโฟลเดอร์ JDK…', 'လိူၵ်ႈၾူဝ်ႇလ်ႇတိူဝ်ႇ JDK…'),
+    'jdk_label': ('JDK used for Java builds (JDK 17 or newer)', 'JDK ที่ใช้สร้างตัวติดตั้ง Java (JDK 17 ขึ้นไป)', 'JDK ဢၼ်ၸႂ်ႉသၢင်ႈ Java (JDK 17 ၶိုၼ်ႈၵႂႃႇ)'),
+    'mac_tools_refresh': ('Check all macOS tools', 'ตรวจสอบเครื่องมือ macOS ทั้งหมด', 'ၸႅတ်ႈထတ်းၶိူင်ႈမိုဝ်း macOS တင်းသဵင်ႈ'),
+    'tools_intro': (
+        'Build native installers only on their target operating system. Windows builds *_Setup.exe; macOS builds *_Setup.dmg. No cloud build, GitHub repository, or token is required. Launch4j is not required.',
+        'สร้างตัวติดตั้งบนระบบปฏิบัติการเป้าหมายเท่านั้น: Windows สร้าง *_Setup.exe และ macOS สร้าง *_Setup.dmg ไม่ต้องใช้ Cloud Build, GitHub Repository หรือ Token และไม่จำเป็นต้องใช้ Launch4j',
+        'သၢင်ႈ installer ၼိူဝ် OS ဢၼ်မႅၼ်ႈၵၼ်ၵူၺ်း: Windows သၢင်ႈ *_Setup.exe၊ macOS သၢင်ႈ *_Setup.dmg။ ဢမ်ႇလူဝ်ႇ Cloud Build၊ GitHub Repository ႁိုဝ် Token၊ လႄႈ ဢမ်ႇလူဝ်ႇ Launch4j။'
+    ),
+    'mac_tools_note': (
+        'macOS prerequisites are listed below. Use Check to inspect this Mac and Download / Help to open the official vendor page. hdiutil is built into macOS; Xcode tools are needed only by some dependencies.',
+        'รายการเครื่องมือ macOS อยู่ด้านล่าง กดตรวจสอบเพื่อตรวจบน Mac และกดดาวน์โหลด / คู่มือเพื่อเปิดเว็บไซต์ทางการ hdiutil มีมากับ macOS ส่วน Xcode จำเป็นเฉพาะบางแพ็กเกจ',
+        'macOS ၶိူင်ႈမိုဝ်းဢၼ်လူဝ်ႇၸႂ်ႉ မီးဝႆႉတၢင်းတႂ်ႈ။ ၶိုၼ်းၼဵၵ်းၸႅတ်ႈထတ်းတႃႇတူၺ်းၼိူဝ် Mac၊ လူတ်ႇ / ၵမ်ႉထႅမ် တေပိုတ်ႇဝႅပ်ႉၸဝ်ႈၶွင်။ hdiutil မီးမႃးၸွမ်း macOS၊ Xcode လူဝ်ႇၸႂ်ႉၵူၺ်းၼႂ်း package ၵမ်ႈၽွင်ႈ။'
+    ),
+    'about_text': (
+        'EXE Builder Studio • Version {version}\nDeveloped by Khurkham Langkhur\nBuild EXE / DMG Installers • Java / Python • Icon Conversion\nEmbedded fonts: TH Sarabun New / A J Kunheing E-T-M 05',
+        'EXE Builder Studio • เวอร์ชัน {version}\nผู้พัฒนา: Khurkham Langkhur\nBuild EXE / DMG Installers • Java / Python • Icon Conversion\nฟอนต์ที่ฝัง: TH Sarabun New / A J Kunheing E-T-M 05',
+        'EXE Builder Studio • ဝႃးသျိၼ်း {version}\nၽူႈၶူင်သၢင်ႈ: Khurkham Langkhur\nBuild EXE / DMG Installers • Java / Python • Icon Conversion\nၽင်ၾွၼ်ႉ: TH Sarabun New / A J Kunheing E-T-M 05'
     ),
 }

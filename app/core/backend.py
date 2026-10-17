@@ -1,6 +1,6 @@
 # Shared validation and compatibility helpers used by build services and the UI.
 from pathlib import Path
-import os, re, shutil, sys, xml.etree.ElementTree as ET
+import os, re, shutil, xml.etree.ElementTree as ET
 from PIL import Image, ImageOps
 
 def require_file(value, suffix=None):

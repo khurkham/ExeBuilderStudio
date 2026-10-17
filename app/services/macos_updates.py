@@ -6,15 +6,12 @@ import json
 import os
 import platform
 import re
-import shutil
-import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import Request, build_opener, HTTPSHandler, HTTPRedirectHandler
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QThread, Signal, QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtCore import QUrl
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QProgressBar, QMessageBox
 
 from app.services.tool_downloads import APP_VERSION, UPDATE_REPOSITORY, version_key
@@ -61,13 +58,12 @@ def latest_macos_release() -> dict:
     release = _get_json(f"https://api.github.com/repos/{UPDATE_REPOSITORY}/releases/latest")
     if release.get("draft") or release.get("prerelease"):
         raise ValueError("The latest release is not a stable public release.")
-    assets = release.get("assets", [])
     arch = _mac_arch()
     candidates = [
-        item for item in assets
+        item for item in release.get("assets", [])
         if item.get("name", "").lower().endswith(".dmg")
         and "macos" in item.get("name", "").lower()
-        and arch.lower() in item.get("name", "").lower()
+        and arch in item.get("name", "").lower()
         and item.get("browser_download_url")
     ]
     if not candidates:
@@ -106,8 +102,7 @@ def download_dmg(release: dict, progress) -> Path:
         _validate_https(release["url"])
         with _OPENER.open(request, timeout=40) as response, partial.open("wb") as output:
             _validate_https(response.geturl())
-            content_type = response.headers.get("Content-Type", "").lower()
-            if "text/html" in content_type:
+            if "text/html" in response.headers.get("Content-Type", "").lower():
                 raise ValueError("GitHub returned a web page instead of a DMG.")
             total = int(response.headers.get("Content-Length", "0"))
             done = 0
@@ -126,7 +121,7 @@ def download_dmg(release: dict, progress) -> Path:
             raise ValueError("The DMG download is incomplete. Please try again.")
         if digest.hexdigest().lower() != release["sha256"]:
             raise ValueError("SHA-256 verification failed. The downloaded DMG was rejected.")
-        # UDIF DMG images store the "koly" trailer signature 512 bytes from EOF.
+        # Validate the UDIF trailer signature before allowing the image to be opened.
         with partial.open("rb") as stream:
             stream.seek(-512, os.SEEK_END)
             if stream.read(4) != b"koly":
@@ -167,7 +162,7 @@ class MacUpdateWorker(QThread):
 
 
 class MacUpdateCard(QWidget):
-    """A macOS-specific updater that verifies and opens the published DMG."""
+    """Checks GitHub Releases, verifies a DMG, and opens it for manual installation."""
     def __init__(self, parent=None):
         super().__init__(parent)
         self.worker = None
@@ -204,12 +199,12 @@ class MacUpdateCard(QWidget):
         self.language = max(0, min(2, int(index)))
         labels = {
             "title": ("macOS Software Updates", "อัปเดตโปรแกรม macOS", "macOS ပရူဝ်ႇၵရႅမ်ႇဢပ်ႉတဵတ်ႉ"),
-            "check": ("Check for Updates", "ตรวจสอบการอัปเดต", "ၵူတ်ႇဝႃးသျိၼ်းမႂ်ႇ"),
+            "check": ("Check for Updates", "ตรวจสอบการอัปเดต", "ၸႅတ်ႈထတ်းဝႃးသျိၼ်းမႂ်ႇ"),
             "download": ("Download and Open DMG", "ดาวน์โหลดและเปิดไฟล์ DMG", "လူတ်ႇလႄႈပိုတ်ႇၾၢႆႇ DMG"),
             "note": (
-                "Updates are downloaded from GitHub Releases and SHA-256 verified. This build is not code-signed/notarized, so the DMG opens for manual replacement: quit the app and drag the new app into Applications.",
-                "ดาวน์โหลดอัปเดตจาก GitHub Releases และตรวจสอบ SHA-256 แล้ว รุ่นนี้ยังไม่ได้ลงนาม/Notarize จึงเปิด DMG ให้ติดตั้งด้วยตนเอง: ปิดโปรแกรมแล้วลากแอปใหม่ไปยัง Applications เพื่อแทนที่รุ่นเดิม",
-                "Update တေတေလူတ်ႇတီႈ GitHub Releases လႄႈၵူတ်ႇ SHA-256။ Build ၼႆႉဢမ်ႇပႆႇ Sign/Notarize၊ ၵွပ်ႈၼၼ်ပိုတ်ႇ DMG တႃႇတိတ်းတင်ႈမိုဝ်း: ပိၵ်ႉ app လႄႈလၢၵ်ႈ app မႂ်ႇၶဝ်ႈ Applications"
+                "Updates are downloaded from GitHub Releases and SHA-256 verified. This build is not code-signed/notarized, so install manually: quit the app and drag the new app into Applications.",
+                "ดาวน์โหลดอัปเดตจาก GitHub Releases และตรวจสอบ SHA-256 แล้ว รุ่นนี้ยังไม่ได้ลงนาม/Notarize จึงต้องติดตั้งด้วยตนเอง: ปิดโปรแกรมแล้วลากแอปใหม่ไปยัง Applications เพื่อแทนที่รุ่นเดิม",
+                "Update တေတေလူတ်ႇတီႈ GitHub Releases လႄႈၸႅတ်ႈထတ်း SHA-256။ Build ၼႆႉဢမ်ႇပႆႇ Sign/Notarize၊ ၵွပ်ႈၼၼ်ဢိၼ်ႇသတေႃးလူၺ်ႈတူဝ်ၵဝ်ႇ"
             )
         }
         self.title.setText(labels["title"][self.language])

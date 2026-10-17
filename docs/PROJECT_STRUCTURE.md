@@ -20,7 +20,7 @@ ExeBuilderStudio-main/
 │       └── download_ui.py          # Tool download UI components
 ├── assets/                         # Logo, application icon, and fonts
 ├── installer/                      # Inno Setup project files
-├── tests/                          # Unit tests for build preparation and downloads
+├── tests/                          # Unit tests for build preparation, updates, and downloads
 └── docs/                           # Project documentation
 ```
 

@@ -1,8 +1,11 @@
-; Install EXE Builder Studio only. Never include a developer private key in a Setup.
+; Install EXE Builder Studio. Offline tool payloads are publisher-supplied and validated before build.
+#ifndef InstallerMode
+  #define InstallerMode "Standard"
+#endif
 [Setup]
 AppId={{D8E2ADBD-AD56-4445-A82F-7DA1EFA564B6}
 AppName=EXE Builder Studio
-AppVersion=1.1
+AppVersion=1.2
 AppPublisher=Khurkham Langkhur
 DefaultDirName={localappdata}\Programs\ExeBuilderStudio
 DefaultGroupName=EXE Builder Studio
@@ -22,8 +25,5 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; Flags: unchecked
 Source: "..\dist\ExeBuilderStudio\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\EXE Builder Studio"; Filename: "{app}\ExeBuilderStudio.exe"
-Name: "{userdesktop}\EXE Builder Studio"; Filename: "{app}\ExeBuilderStudio.exe"; Tasks: desktopicon
-
-[Run]
-Filename: "{app}\ExeBuilderStudio.exe"; Description: "Launch EXE Builder Studio"; Flags: nowait postinstall skipifsilent
+Name: "{group}\EXE Builder Studio"; Filename: "{app}\ExeBuilderStudio.exe"; WorkingDir: "{app}"
+Name: "{autodesktop}\EXE Builder Studio"; Filename: "{app}\ExeBuilderStudio.exe"; WorkingDir: "{app}"; Tasks: desktopicon

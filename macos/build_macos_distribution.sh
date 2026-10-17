@@ -3,6 +3,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+MODE="${EBS_INSTALLER_MODE:-Standard}"
+if [[ "$MODE" != "Standard" && "$MODE" != "Offline" ]]; then echo "ERROR: EBS_INSTALLER_MODE must be Standard or Offline."; exit 2; fi
 if [[ "$(uname -s)" != "Darwin" ]]; then
   echo "ERROR: ExeBuilderStudio for macOS must be packaged on a Mac. No cloud build is used."
   exit 2
@@ -32,9 +34,15 @@ mkdir -p "$BUILD_ROOT" "$RELEASE"
 if [[ ! -x "$VENV/bin/python" ]]; then
   "$PYTHON_BIN" -m venv "$VENV"
 fi
-"$VENV/bin/python" -m pip install --upgrade pip
-"$VENV/bin/python" -m pip install -r "$ROOT/requirements.txt"
-VERSION="$("$VENV/bin/python" -c "from app.services.tool_downloads import APP_VERSION; print(APP_VERSION)")"
+if [[ "$MODE" == "Offline" ]]; then
+  WHEELHOUSE="${EBS_WHEELHOUSE:-$ROOT/offline_tools/macos/wheelhouse}"
+  [[ -d "$WHEELHOUSE" ]] || { echo "ERROR: Offline mode requires wheelhouse at $WHEELHOUSE"; exit 2; }
+  "$VENV/bin/python" -m pip install --no-index --find-links "$WHEELHOUSE" --upgrade pip
+  "$VENV/bin/python" -m pip install --no-index --find-links "$WHEELHOUSE" -r "$ROOT/requirements.txt"
+else
+  "$VENV/bin/python" -m pip install --upgrade pip
+  "$VENV/bin/python" -m pip install -r "$ROOT/requirements.txt"
+fi
 
 # Create a native ICNS icon from the source logo using the project's Pillow helper.
 "$VENV/bin/python" - "$ROOT" <<'PY'
@@ -73,6 +81,9 @@ if [[ ! -d "$APP" ]]; then
 fi
 
 # Optionally bundle a full JDK. It must be a redistributable JDK for this Mac architecture.
+if [[ "$MODE" == "Offline" && -z "${EBS_BUNDLE_JDK_HOME:-}" ]]; then
+  echo "ERROR: Offline mode requires EBS_BUNDLE_JDK_HOME pointing to a redistributable JDK for this Mac architecture."; exit 2
+fi
 if [[ -n "${EBS_BUNDLE_JDK_HOME:-}" ]]; then
   JDK_HOME="$(cd "$EBS_BUNDLE_JDK_HOME" && pwd)"
   if [[ ! -x "$JDK_HOME/bin/jpackage" || ! -x "$JDK_HOME/bin/java" ]]; then
@@ -89,6 +100,13 @@ if [[ -n "${EBS_BUNDLE_JDK_HOME:-}" ]]; then
   mkdir -p "$APP/Contents/Resources/tools"
   /usr/bin/ditto "$JDK_HOME" "$APP/Contents/Resources/tools/jdk"
   echo "Bundled JDK: $JDK_HOME"
+  if [[ "$MODE" == "Offline" ]]; then
+    PYTHON_HOME="${EBS_OFFLINE_PYTHON_HOME:-}"
+    [[ -n "$PYTHON_HOME" && -x "$PYTHON_HOME/bin/python3" ]] || { echo "ERROR: Offline mode requires EBS_OFFLINE_PYTHON_HOME with bin/python3."; exit 2; }
+    mkdir -p "$APP/Contents/Resources/tools/python"
+    /usr/bin/ditto "$PYTHON_HOME" "$APP/Contents/Resources/tools/python"
+    echo "Bundled Python runtime: $PYTHON_HOME"
+  fi
 else
   echo "No JDK bundled. Java JAR builds will use a JDK installed on the user's Mac."
 fi
@@ -99,7 +117,12 @@ STAGE="$BUILD_ROOT/stage"
 rm -rf "$STAGE"
 mkdir -p "$STAGE"
 /usr/bin/ditto "$APP" "$STAGE/ExeBuilderStudio.app"
-DMG="$RELEASE/ExeBuilderStudio-$VERSION-macOS-$ARCH.dmg"
+VERSION="${APP_VERSION:-$(sed -n "s/^APP_VERSION = '\\([^']*\\)'.*/\\1/p" "$ROOT/app/services/tool_downloads.py" | head -n 1)}"
+if [[ -z "$VERSION" ]]; then
+  echo "Could not determine APP_VERSION from app/services/tool_downloads.py" >&2
+  exit 1
+fi
+DMG="$RELEASE/ExeBuilderStudio-$MODE-$VERSION-macOS-$ARCH.dmg"
 rm -f "$DMG"
 
 # Prefer create-dmg for a polished drag-and-drop window when it is installed.
@@ -118,12 +141,12 @@ if command -v create-dmg >/dev/null 2>&1; then
 else
   echo "create-dmg is not installed; using macOS hdiutil fallback."
   ln -s /Applications "$STAGE/Applications"
-  /usr/bin/hdiutil create -volname "ExeBuilderStudio 1.1" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
+  /usr/bin/hdiutil create -volname "ExeBuilderStudio $VERSION" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
 fi
 
 # Emit a checksum for users to verify the downloaded release file.
 shasum -a 256 "$DMG" > "$DMG.sha256"
 echo
-echo "SUCCESS: $DMG"
+echo "SUCCESS ($MODE mode): $DMG"
 echo "SHA256: $(awk '{print $1}' "$DMG.sha256")"
 echo "This build targets $ARCH. Build separately on the other Mac architecture if needed."

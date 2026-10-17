@@ -138,7 +138,7 @@ def _find_iscc(compiler: str = "") -> str:
     for candidate in candidates:
         if candidate.is_file() and candidate.name.lower() == "iscc.exe":
             return str(candidate.resolve())
-    raise FileNotFoundError("Inno Setup compiler (ISCC.exe) was not found. Install Inno Setup 6/7 or select it in Tools / Java.")
+    raise FileNotFoundError("Inno Setup compiler (ISCC.exe) was not found. Install Inno Setup 6/7 or ensure ISCC.exe is available in a standard installation folder or PATH.")
 
 
 def _run(command: list[str], *, cwd: Path, log=None, env=None, progress=None,
@@ -149,9 +149,13 @@ def _run(command: list[str], *, cwd: Path, log=None, env=None, progress=None,
     if progress and progress_range:
         progress(start, phase)
     lines = []
+    # Hide the child console window on Windows while continuing to capture and
+    # stream stdout/stderr into the application's log panel.
+    no_console = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
     process = subprocess.Popen(
         command, cwd=str(cwd), env=env, stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", bufsize=1
+        stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", bufsize=1,
+        creationflags=no_console
     )
     if process_callback:
         process_callback(process)
@@ -284,7 +288,15 @@ def build_windows_installer(*, kind: str, source: str, output: str, name: str,
             _run([iscc, str(script)], cwd=work, log=log, progress=progress,
                  progress_range=(68, 92), phase="Creating installer with Inno Setup", process_callback=process_callback)
         else:
-            py = interpreter or os.sys.executable
+            py = interpreter or ""
+            if not py and getattr(os.sys, "frozen", False):
+                bundled_python = Path(os.sys.executable).resolve().parent / "tools" / "python" / "python.exe"
+                if bundled_python.is_file():
+                    py = str(bundled_python)
+            if not py:
+                py = shutil.which("python") or shutil.which("python3") or ""
+            if not py or not Path(py).is_file():
+                raise FileNotFoundError("Python 3 was not found. Install Python, select its interpreter, or use a Full Offline installer with the Python runtime bundled.")
             icon_path = ""
             if icon:
                 icon_path = str(prepare_icon(icon, work / "resources" / "app.ico", "windows"))
